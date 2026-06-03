@@ -3,14 +3,14 @@
   "owner": {
     "name": "Hieuvu7"
   },
-  "description": "Feature delivery workflow skills for Claude Code: live implementation status tracking, interactive HTML test plans, and automated test-plan execution.",
+  "description": "Feature delivery workflow skills for Claude Code: live implementation status tracking, caller-facing API contracts, interactive HTML test plans, automated test-plan execution, and non-technical feature briefs for PO/QC.",
   "plugins": [
     {
       "name": "feature-flow",
       "source": "./plugins/feature-flow",
-      "description": "Bundle of 3 skills closing the loop proposal → implement → test plan → auto-test: impl-status, test-case-writer, service-test-runner.",
+      "description": "Bundle of 5 skills closing the loop proposal → implement → API docs → test plan → auto-test → stakeholder brief: impl-status, api-contract-writer, test-case-writer, service-test-runner, feature-brief.",
       "license": "MIT",
-      "keywords": ["impl-status", "test-case-writer", "service-test-runner", "qa", "test-plan", "status-tracking"]
+      "keywords": ["impl-status", "api-contract-writer", "test-case-writer", "service-test-runner", "feature-brief", "qa", "test-plan", "status-tracking", "api-docs", "stakeholder-docs"]
     }
   ]
 }

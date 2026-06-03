@@ -1,10 +1,10 @@
 {
   "name": "feature-flow",
   "displayName": "Feature Flow",
-  "description": "Bundle of 3 skills closing the loop proposal → implement → test plan → auto-test: impl-status (live HTML status tracker), test-case-writer (interactive HTML test plans), service-test-runner (test plan → pytest → per-TC results).",
+  "description": "Bundle of 5 skills closing the loop proposal → implement → API docs → test plan → auto-test → stakeholder brief: impl-status (live HTML status tracker), api-contract-writer (caller-facing Markdown API contracts), test-case-writer (interactive HTML test plans), service-test-runner (test plan → pytest → per-TC results), feature-brief (non-technical one-pager for PO/QC).",
   "author": {
     "name": "Hieuvu7"
   },
   "license": "MIT",
-  "keywords": ["impl-status", "test-case-writer", "service-test-runner", "qa", "test-plan", "status-tracking"]
+  "keywords": ["impl-status", "api-contract-writer", "test-case-writer", "service-test-runner", "feature-brief", "qa", "test-plan", "status-tracking", "api-docs", "stakeholder-docs"]
 }

@@ -1,0 +1,16 @@
+{
+  "name": "feature-flow",
+  "owner": {
+    "name": "Hieuvu7"
+  },
+  "description": "Feature delivery workflow skills for Claude Code: live implementation status tracking, interactive HTML test plans, and automated test-plan execution.",
+  "plugins": [
+    {
+      "name": "feature-flow",
+      "source": "./plugins/feature-flow",
+      "description": "Bundle of 3 skills closing the loop proposal → implement → test plan → auto-test: impl-status, test-case-writer, service-test-runner.",
+      "license": "MIT",
+      "keywords": ["impl-status", "test-case-writer", "service-test-runner", "qa", "test-plan", "status-tracking"]
+    }
+  ]
+}

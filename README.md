@@ -15,7 +15,7 @@ Status tracking and test running are **explicit-invoke** — they do not auto-tr
 ## Install
 
 ```
-/plugin marketplace add <owner>/feature-flow
+/plugin marketplace add ghiaog123/feature-flow
 /plugin install feature-flow@feature-flow
 ```
 
@@ -36,6 +36,20 @@ docs/features/<feature>/
 ├── test_plan_<slug>.html
 ├── tests/                       # generated pytest (run by explicit path, not collected by CI)
 └── test_results_<slug>.md
+```
+
+## Repository layout
+
+```
+.claude-plugin/marketplace.json      # marketplace manifest
+plugins/feature-flow/
+├── .claude-plugin/plugin.json       # plugin manifest
+└── skills/
+    ├── impl-status/                 # SKILL.md + proposal/status HTML templates + triggering reference
+    ├── api-contract-writer/         # SKILL.md + contract-format reference
+    ├── test-case-writer/            # SKILL.md
+    ├── service-test-runner/         # SKILL.md
+    └── feature-brief/               # SKILL.md + one-pager HTML template
 ```
 
 ## License

@@ -1,6 +1,6 @@
 # feature-flow
 
-Claude Code plugin bundling 5 skills that close the loop **proposal → implement → API docs → test plan → auto-test → stakeholder brief**:
+Claude Code plugin bundling 6 skills that close the loop **proposal → implement → API docs → test plan → auto-test → stakeholder brief → deep-understanding handoff**:
 
 | Skill | What it does | Invoke |
 |-------|--------------|--------|
@@ -9,6 +9,7 @@ Claude Code plugin bundling 5 skills that close the loop **proposal → implemen
 | **test-case-writer** | Generates a self-contained interactive HTML test plan (collapsible sections, pass/fail tracking, progress bar, localStorage persistence, Markdown export). Derives cases from an impl-status proposal when one exists; applies risk-based QA methodology (P0–P3, positive/negative/boundary). | `/feature-flow:test-case-writer` |
 | **service-test-runner** | Translates the manual test plan into executable pytest tests, runs them against the implemented service, and reports PASS/FAIL/SKIP keyed back to each TC-id. | `/feature-flow:service-test-runner` |
 | **feature-brief** | Generates a non-technical one-page HTML "Feature Brief" for PO/QC — what changed, why, how it flows, acceptance criteria, test results, gaps. Synthesizes from `docs/features/<feature>/` artifacts (proposal, test plan, status) when present; translates technical concepts into everyday metaphors with concrete persona examples. | `/feature-flow:feature-brief` |
+| **comprehension-coach** | Acts as a patient expert teacher that makes a human *deeply* understand a change/feature/session — not just nod along. Teaches incrementally (problem → solution → impact), keeps a running understanding-checklist (`comprehension.md`), drills the WHYs, quizzes via `AskUserQuestion`, and won't "finish" until every checklist item is demonstrated. Source is flexible: current session, git diff/PR, or `docs/features/<feature>/`. | `/feature-flow:comprehension-coach` |
 
 Status tracking and test running are **explicit-invoke** — they do not auto-trigger on ordinary "implement X" requests. `test-case-writer` triggers on any request to write test cases / test plans; `api-contract-writer` triggers on requests to document APIs / write API contracts.
 
@@ -49,7 +50,8 @@ plugins/feature-flow/
     ├── api-contract-writer/         # SKILL.md + contract-format reference
     ├── test-case-writer/            # SKILL.md
     ├── service-test-runner/         # SKILL.md
-    └── feature-brief/               # SKILL.md + one-pager HTML template
+    ├── feature-brief/               # SKILL.md + one-pager HTML template
+    └── comprehension-coach/         # SKILL.md (interactive teach-until-understood)
 ```
 
 ## License

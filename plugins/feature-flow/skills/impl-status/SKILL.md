@@ -70,7 +70,28 @@ Không hỏi user trừ khi 3 nguồn đều rỗng/ambiguous.
 
 ### Bước 1 — Proposal (khi user yêu cầu thiết kế trước)
 
-Khi user nói "đánh giá giải pháp", "viết đề xuất", "thiết kế trước", "viết proposal HTML": sinh `docs/features/<feature>/proposal.html` với:
+Khi user nói "đánh giá giải pháp", "viết đề xuất", "thiết kế trước", "viết proposal HTML":
+
+#### 1a — Hỏi lại để clear ý (BẮT BUỘC trước khi sinh proposal)
+
+Proposal chốt design intent — sai giả định ở đây sẽ lan xuống status file + code thật. Rẻ hơn nhiều nếu hỏi trước. Vì vậy **luôn** đặt **3–5 câu hỏi** làm rõ trước khi viết `proposal.html`.
+
+**Chọn số câu hỏi theo độ chi tiết user đã mô tả:**
+- Mô tả kỹ, rõ scope + data model + API + edge case → **3** câu (chỉ hỏi phần thật sự mơ hồ).
+- Mô tả trung bình → **4** câu.
+- Mô tả sơ sài / một câu / nhiều chỗ hổng → **5** câu.
+
+Đừng hỏi cho đủ số — hỏi đúng chỗ còn mơ hồ. Nếu mọi thứ đã rõ tới mức không nghĩ ra được 3 câu đáng hỏi, vẫn phải hỏi ≥3: chuyển sang xác nhận giả định ("Tôi đang hiểu X, đúng không?", "Scope có bao gồm Y không?", "Có ràng buộc Z nào không?").
+
+**Ưu tiên hỏi** những thứ làm proposal đi sai hướng nếu đoán nhầm: scope (làm gì / không làm gì), data model + nguồn dữ liệu, hành vi edge case, ràng buộc tương thích ngược / migration, ai là consumer của API.
+
+**Ngữ cảnh session trước là LOW TRUST.** Có thể tái dùng để *gợi ý* câu trả lời, nhưng không coi là chốt. Nếu yêu cầu hiện tại **mâu thuẫn** với điều đã nói trước đó trong session (vd: trước nói dùng Postgres, giờ ngầm định Mongo) → **phải hỏi lại để giải quyết mâu thuẫn**, nêu rõ hai phía conflict, đừng tự chọn.
+
+Dùng tool hỏi nhiều lựa chọn (AskUserQuestion) khi câu hỏi có phương án rời rạc; hỏi open-ended khi cần mô tả tự do. Sau khi user trả lời, mới sinh proposal. Nếu câu trả lời lại mở ra mơ hồ mới đáng kể, hỏi thêm 1 vòng ngắn — đừng kéo dài vô hạn.
+
+#### 1b — Sinh proposal
+
+Sinh `docs/features/<feature>/proposal.html` với:
 
 - Mục tiêu (1 đoạn).
 - Thay đổi data model (table).

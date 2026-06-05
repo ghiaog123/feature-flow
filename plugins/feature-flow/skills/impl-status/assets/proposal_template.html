@@ -167,7 +167,24 @@
   @media (prefers-reduced-motion: reduce) {
     * { transition: none !important; animation: none !important; }
   }
+
+  /* Mermaid diagram container — dùng cho logic kĩ thuật (luồng, quan hệ data, state) */
+  .diagram {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 18px;
+    margin: 10px 0;
+    overflow-x: auto;
+    text-align: center;
+  }
+  .diagram .mermaid { font-family: "IBM Plex Sans", sans-serif; }
+  .diagram-cap { color: var(--text-muted); font-size: 12px; margin-top: 6px; }
 </style>
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({ startOnLoad: true, theme: 'neutral', securityLevel: 'loose' });
+</script>
 </head>
 <body>
 <div class="wrap">
@@ -177,22 +194,50 @@
   </header>
 
   <section>
-    <h2>1. Mục tiêu</h2>
-    <!-- 1 đoạn ngắn -->
+    <h2>1. Bối cảnh &amp; Vấn đề</h2>
+    <!-- 1–2 đoạn: tại sao cần làm, đang đau ở đâu, trigger nào dẫn tới đề xuất này -->
   </section>
 
   <section>
-    <h2>2. Thay đổi data model</h2>
+    <h2>2. Mục tiêu &amp; Scope</h2>
+    <!-- 1 đoạn mục tiêu: xong nghĩa là gì -->
+    <div class="grid">
+      <div class="card pros"><h3>In-scope</h3><ul><!-- làm gì --></ul></div>
+      <div class="card alt"><h3>Non-goals</h3><ul><!-- KHÔNG làm gì — chặn scope creep --></ul></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>3. Thay đổi data model</h2>
     <table>
       <thead><tr><th>Layer</th><th>Thay đổi</th><th>Ghi chú</th></tr></thead>
       <tbody>
         <!-- <tr><td>Postgres</td><td><span class="tag t-add">ADD</span> column ...</td><td>...</td></tr> -->
       </tbody>
     </table>
+    <!-- Quan hệ giữa entity → vẽ erDiagram thay vì mô tả bằng text -->
+    <div class="diagram">
+      <pre class="mermaid">
+erDiagram
+    PROJECT ||--o{ TASK : has
+    TASK }o--|| USER : "assigned to"
+    PROJECT {
+      uuid id PK
+      string name
+    }
+    TASK {
+      uuid id PK
+      uuid project_id FK
+      uuid assignee_id FK
+      string status
+    }
+      </pre>
+      <div class="diagram-cap">ER — quan hệ entity sau thay đổi</div>
+    </div>
   </section>
 
   <section>
-    <h2>3. API surface</h2>
+    <h2>4. API surface</h2>
     <table>
       <thead><tr><th style="width:80px;">Method</th><th>Path</th><th>Mô tả</th></tr></thead>
       <tbody>
@@ -202,12 +247,32 @@
   </section>
 
   <section>
-    <h2>4. Luồng chi tiết</h2>
-    <!-- numbered steps cho mỗi API mới -->
+    <h2>5. Luồng chi tiết</h2>
+    <!-- Logic kĩ thuật → diagram ĐƠN GIẢN cho dễ nhìn, không cần sequenceDiagram.
+         Ưu tiên flowchart (box + mũi tên). Sequence/state chỉ khi thật cần. -->
+    <div class="diagram">
+      <pre class="mermaid">
+flowchart LR
+    A[Client gửi request] --> B{Hợp lệ?}
+    B -->|Có| C[Update DB]
+    B -->|Không| E[Trả 409]
+    C --> D[Trả 200]
+      </pre>
+      <div class="diagram-cap">Luồng xử lý — flowchart đơn giản</div>
+    </div>
+    <!-- Chỉ thêm vài dòng text cho chi tiết diagram không tải nổi (vd: rule validate cụ thể) -->
   </section>
 
   <section>
-    <h2>5. Đánh giá</h2>
+    <h2>6. Tiêu chí nghiệm thu</h2>
+    <!-- acceptance criteria — điều kiện kiểm chứng được "feature đạt"; test-case-writer + feature-brief map thẳng từ đây -->
+    <ul>
+      <!-- <li>Given ... When ... Then ...</li> -->
+    </ul>
+  </section>
+
+  <section>
+    <h2>7. Đánh giá</h2>
     <div class="grid">
       <div class="card pros"><h3>Ưu</h3><ul><!-- ... --></ul></div>
       <div class="card cons"><h3>Rủi ro</h3><ul><!-- ... --></ul></div>
@@ -216,7 +281,7 @@
   </section>
 
   <section>
-    <h2>6. Checklist triển khai</h2>
+    <h2>8. Checklist triển khai</h2>
     <ul>
       <!-- high-level items, sẽ được sao chép vào status file khi implement -->
     </ul>

@@ -12,6 +12,10 @@ Turn a **manual** test plan into **automated** service tests, run them, and reco
 test plan (HTML/md from test-case-writer)
    │  Step 1 parse → cases [{id, pri, tag, desc, expect, depth, autoClass, oracle, agentHint}]
    ▼
+identify service + deps + run mode (Step 2)
+   │  Step 2.5 PREFLIGHT GATE — probe service up / deps connect / creds / oracle sinks
+   │  ❌ any fail → report checklist, STOP, wait for user → re-probe until all green
+   ▼
 classify auto | agent | manual (Step 3 — read autoClass, self-classify only if absent)
    │  Step 4 generate: auto → static pytest · agent → call+oracle+judgement · manual → skip
    ▼
@@ -30,6 +34,8 @@ docs/features/<feature>/test_results_<slug>.md
 
 ## Core rules (read first)
 
+- **Real running service over mock — always.** The point of this skill is to test the service's *actual behavior*, not a stubbed imitation of it. **Prioritize bringing the service up** (start it — `docker-compose up`, the project run command — then hit it over HTTP) and assert against that live behavior. Do NOT mock the service under test or its core dependencies (DB, broker) to manufacture a green — a passing test against a mock proves nothing about the real service. In-process `TestClient` is a fallback only (Step 2); even then, mock only what the project *already* mocks at import time for bootstrap, never the logic under test. If the service can't be started, the case is `SKIP (blocked)` / `ERROR` — never a mock-backed PASS.
+- **Preflight before you test (Step 2.5).** On invocation, probe the environment — service up? deps (DB/broker/downstream) connect? creds set? oracle sinks reachable? — and **report a readiness checklist to the user. If anything fails, STOP and wait** for them to fix it (or start it for them with their go-ahead). Begin generating/running tests only once every required condition is green. Never run against a half-up environment and call the resulting connection errors "fails".
 - **TC-id traceability is the whole point.** Every generated test function name + docstring carries its `TC-id`. A failure must map to exactly one plan case. Never merge two cases into one test.
 - **Never fabricate a pass.** A TC is `PASS` only if its assertion actually ran and passed. If the service wasn't reachable, the dependency was missing, or the case can't be automated → mark `SKIP` or `ERROR` with the reason. No green without a real green.
 - **Three tiers, no fudging between them.** `auto` = static pytest assertion. `agent` = needs an oracle beyond the response or semantic judgement → agent calls the service, checks the oracle, judges **with cited evidence**, result labelled `🤖 agent-judged` (never folded into a plain PASS). `manual` = visual/UX/exploratory → `pytest.skip("manual: <reason>")`, listed explicitly. Don't pretend to test manual cases; don't let an agent-judged verdict masquerade as a deterministic PASS.
@@ -57,12 +63,41 @@ Inspect the repo to fill these in (ask the user only if genuinely ambiguous):
 
 - **Service**: which one the plan targets (in a monorepo, match by the endpoints/paths named in the plan).
 - **Run mode**:
-  - **Live (default, black-box)** — service already running; hit a real base URL with `httpx`. Best fit for "after implement, auto-test the running service." Get base URL from the user, repo `.env`, or `docker-compose.yml` (e.g. `http://localhost:8000`).
-  - **In-process (`TestClient`)** — only when the user wants no running server. Check the project's existing unit tests for import-time bootstrap quirks (e.g. module-level mocks of external services applied **before** importing the app); replicate that pattern in `conftest.py` or imports may fail.
+  - **Live (default, black-box) — start the service first.** This is the preferred mode; testing the real running service is the whole point. Don't assume it's already up: check (`curl`/`httpx` the base URL or health endpoint), and **if it's down, bring it up** before generating/running — `docker-compose up -d`, the project's run command (`uv run …`, `make run`), with its real dependencies (DB, broker) running too. Then hit the real base URL with `httpx`. Get base URL + how-to-start from the user, repo `.env`, `docker-compose.yml`, or the README (e.g. `http://localhost:8000`). Give the service a moment + poll the health endpoint before firing tests.
+  - **In-process (`TestClient`) — fallback only**, when the service genuinely can't be started (no runtime, missing infra) or the user explicitly wants no running server. Check the project's existing unit tests for import-time bootstrap quirks (e.g. module-level mocks of external services applied **before** importing the app); replicate **only that bootstrap pattern** in `conftest.py` or imports fail. Do not extend mocking to the logic under test — that turns a real test into a fake one.
 - **Auth + conventions** — read them, don't guess:
   - Discover the service's auth scheme from its docs / dependency code (header names like `X-API-Key` or `Authorization: Bearer`, which endpoints need which key). Do not assume a convention.
   - Pull key values + base URL from env; never hardcode secrets into the generated file — read from `os.getenv` in `conftest.py`.
 - **White-box oracle access** — any `auto`-with-side-channel-oracle or `agent` case asserts against a DB row / event / log, not just the API. Black-box (API-only) can't reach those. Get the oracle's access (DB DSN, broker bootstrap, log path) from repo `.env` / `docker-compose.yml`, exposed as a fixture (creds via `os.getenv`). **If the oracle sink is unreachable, the case is `SKIP (blocked)` or `ERROR` — never a response-only PASS dressed up as a verdict.** That is the line that keeps "never fabricate a pass" intact under the new tier.
+
+### Step 2.5 — Preflight readiness gate (BLOCKING)
+
+**Before generating or running anything, prove the test environment is actually ready.** A test run against a half-up environment produces fake reds (connection refused) and wastes the user's time. Probe first, report, and **wait for the user** until every required condition is green.
+
+1. **Build the readiness checklist** from what Step 2 identified. Typical conditions:
+   - **Service under test is up** — health endpoint returns 200 (or the process responds on its port). Probe: `curl`/`httpx` the base URL or `/health`.
+   - **Each dependent service connects** — DB (open a connection with the configured DSN), broker/queue (ping/connect), cache, and any downstream service the endpoints call. Probe each independently — "service is up" does NOT imply its deps are.
+   - **Auth/creds present** — required env vars (API key, DB URL, broker URL) are set and non-empty.
+   - **Oracle sinks reachable** — for white-box `auto` / `agent` cases, the DB/event/log sink you'll assert against is connectable (same probe as deps, but flagged as oracle access).
+   - **Migrations/seed** — schema present and any seed data the plan assumes exists.
+2. **Probe each condition** with a cheap, read-only check. Don't generate tests to discover readiness — use direct probes (curl, a one-shot DB connect, env var read).
+3. **Report a status table to the user** — every condition with ✅/❌ and, for each ❌, the concrete fix:
+
+   | Condition | Status | Fix |
+   |-----------|--------|-----|
+   | Service `backend` up (`:8000/health`) | ❌ | `docker-compose up -d backend` |
+   | Postgres reachable (`DATABASE_URL`) | ✅ | — |
+   | Redis broker reachable | ❌ | start redis / check `REDIS_URL` |
+   | `API_KEY` env set | ❌ | export `API_KEY=…` |
+
+4. **If anything is ❌ → STOP. Do not generate or run tests.** Hand the checklist to the user, state plainly what to start/set/open, and wait. For things the skill *can* start (e.g. `docker-compose up`), offer to do it — but only with the user's go-ahead, never silently. Re-probe when the user says ready; loop until all required conditions are green.
+5. **Only when every required condition passes → proceed to Step 3.** Note any optional-but-missing condition (e.g. an oracle sink for a non-P0 case) so the user knows which cases will be `SKIP(blocked)` rather than run.
+
+**In-process (`TestClient`) fallback:** skip the base-URL/health probe (no server), but still verify import-time bootstrap succeeds and that any oracle sink (DB) the cases assert against is reachable — same gate, narrower checklist.
+
+**Run this gate ONCE, in the main thread, before any delegation.** Environment setup — starting the service, bringing up deps, seeding, exporting creds — happens here, a single time, and is **shared** by every test that follows. Do NOT push setup into the workers: if Step 5 fans cases out to multiple `test-runner` workers, they all hit the *same* already-ready environment (same base URL, same DB) and must NOT each start the service or re-probe deps — that would mean N redundant setups, race conditions on shared ports/data, and slow runs. The contract: **main thread sets up + proves ready once → workers assume ready and only run their assigned TCs.** Capture the env coordinates (base URL, DSN, key env vars) once here and pass them to every worker.
+
+This gate is why the run step rarely sees connection `ERROR`s: the environment was proven ready before a single test fired.
 
 ### Step 3 — Classify each case: `auto` | `agent` | `manual`
 
@@ -199,7 +234,9 @@ Do NOT run inline and dump verbose output into the main thread. Spawn the **`tes
 cd <service> && <project test command> <abs path to docs/features/<feature>/tests/> -v
 ```
 
-Use the project's own Python env / runner (`uv run pytest`, `poetry run pytest`, `python -m pytest`, …) so `httpx`/`pytest` resolve. If no `test-runner` subagent is available on this machine, fall back to a general-purpose subagent with the same instructions — or run via Bash as a last resort, keeping output summarized. Ask it to return: per-test pass/fail, the summary line, and the full assertion text for any failure. If live mode and the service isn't up, the agent should report connection errors — those become `ERROR`, not `FAIL`.
+**Workers inherit the ready environment from Step 2.5 — they never set it up.** Step 2.5 already started the service, brought up deps, and proved readiness *once* in the main thread. Each worker is given the env coordinates (base URL, DSN, creds) and just runs its assigned TCs against that shared, live environment. A worker must NOT start/stop the service, bring up deps, re-seed, or re-probe readiness — doing so per worker means N redundant setups plus races on shared ports/data. Setup is shared and done; the worker's only job is run + report.
+
+If you fan out across multiple workers (e.g. split by section/priority for speed), shard by test path/`-k` selector against the *same* environment — not by giving each its own stack. Use the project's own Python env / runner (`uv run pytest`, `poetry run pytest`, `python -m pytest`, …) so `httpx`/`pytest` resolve. If no `test-runner` subagent is available on this machine, fall back to a general-purpose subagent with the same instructions — or run via Bash as a last resort, keeping output summarized. Ask it to return: per-test pass/fail, the summary line, and the full assertion text for any failure. A connection error should be rare here — Step 2.5 gated it — but if one occurs it's `ERROR`, not `FAIL`.
 
 **Agent-assisted cases need their evidence captured, not just pass/fail.** For each `agent` case, the runner subagent must return the concrete evidence: the request sent, the response, and the oracle query result (DB row / recomputed value / event read). That evidence backs the `🤖 agent-judged` verdict in the report — a verdict without evidence is `ERROR`, not a pass. The deterministic call+oracle assertions run as normal pytest; only the residual semantic call is the agent's judgement.
 

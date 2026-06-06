@@ -27,7 +27,9 @@ The output is a single `.html` file. Key UI components:
 
 ## Data Model
 
-Represent test data as a JS `const plan` array:
+Test data is a JS `const plan` array. **The schema is the contract shared with the `service-test-runner` skill — defined once in [`references/case-schema.md`](references/case-schema.md). Read it before generating; do not redefine fields here.**
+
+Quick shape (full semantics in the schema file):
 
 ```js
 const plan = [
@@ -38,15 +40,22 @@ const plan = [
       {
         id: 'TC-01',
         title: 'Short descriptive title',
-        pri: 'P0',           // optional: P0 | P1 | P2 | P3 (risk-based priority)
-        tag: 'pdf',          // optional: pdf | docx | xlsx | all | any custom string
+        pri: 'P0',           // P0 | P1 | P2 | P3 (risk-based priority)
+        tag: 'pdf',          // optional UI tag
         desc: 'Steps or context. What to do.',
-        expect: 'Exact expected outcome.'
+        expect: 'Exact expected outcome.',
+        // contract fields — fill from the deep pass (Step 0); optional, omit when unknown:
+        depth: 'core',       // 'surface' | 'core' — exercises core business logic?
+        autoClass: 'auto',   // 'auto' | 'agent' | 'manual' — deterministic (incl. DB oracle) → auto; only fuzzy/NL → agent
+        oracle: 'query bookings.status==CANCELLED; refund_log has 1 row',  // truth beyond the response (white-box)
+        agentHint: 'Setup: book+pay. Rule: cancel <24h ⇒ 10% penalty. Verify refund==price*0.9'
       }
     ]
   }
 ];
 ```
+
+The four contract fields (`depth`, `autoClass`, `oracle`, `agentHint`) let `service-test-runner` skip re-guessing which cases are hard and how to verify them. **You** (with full proposal + code context here) are the right place to decide that — set them in Step 0. They are optional: omit when a case is plain, or when no code exists yet to ground them (mark provisional in `agentHint`).
 
 ## Tag Colors
 
@@ -94,9 +103,16 @@ Before interviewing, check for a proposal produced by the `impl-status` skill:
    | `<h2>6. Checklist triển khai</h2>` | a **smoke / regression** section covering each rollout item |
 
 3. **Set `pri` from risk.** Default `P2`. Endpoint/flow named in a risk → `P0`. Core happy-path of a new endpoint → `P1`. Cosmetic/optional → `P3`.
-4. **Confirm scope before generating.** Show the user the derived section list + case count, let them trim/add, then emit the HTML.
+4. **Deep pass — read the implemented code, not just the proposal.** The proposal gives the API surface; the *core logic* lives in the handlers/services. When the code exists, read it and derive cases that exercise it (see "Core-logic test design" below), then set the contract fields per case:
+   - `depth`: `core` if the case hits a state machine / formula / invariant / idempotency / concurrency / multi-step flow; else `surface`.
+   - `autoClass`: `auto` (a deterministic assertion captures it — incl. white-box oracle: DB row / event / log / recomputed value) · `agent` (no deterministic oracle exists — fuzzy NL / ranking / recommendation needing judgement) · `manual` (visual/UX/human). Most `core` cases are `auto` (often white-box).
+   - `oracle`: where the truth lives beyond the response (DB row, computed value, emitted event, log) — for white-box `auto` cases and as grounding for `agent` cases.
+   - `agentHint`: setup + the business rule under test + what to verify. Guidance only — not exact paths/payloads.
 
-**If no proposal exists → fall back to Step 1 (interview / feature description).** Do not block on a missing proposal — many features skip the design doc.
+   **If the code is NOT written yet** (TDD-style: test plan before implement) — do not block. Derive `depth`/`autoClass`/`oracle`/`agentHint` from the proposal as best you can and prefix `agentHint` with `provisional:`, or omit the fields. The runner will ground them against real code later.
+5. **Confirm scope before generating.** Show the user the derived section list + case count + the auto/agent/manual split, let them trim/add, then emit the HTML.
+
+**If no proposal exists → fall back to Step 1 (interview / feature description).** Do not block on a missing proposal — many features skip the design doc. Still do the deep pass against whatever code exists.
 
 ### Step 1: Interview (if needed)
 
@@ -120,6 +136,19 @@ Cover each behavior across these axes — don't only write happy paths:
 - **Regression tiers** when scope is large: smoke (critical paths, fast) → targeted (changed area) → full. Make smoke its own section.
 
 Anti-patterns to avoid: vague steps with no expected result, missing preconditions, no test data, skipped edge/boundary cases.
+
+### Core-logic test design (the deep pass)
+
+Surface cases (status code, field presence, basic validation) are necessary but not sufficient. Read the implemented handlers/services and write cases that exercise the **core logic** — these carry `depth: 'core'`. Most are still `autoClass: 'auto'` — a deterministic assertion *can* capture them, often via a side-channel `oracle` (DB row, event, log, recomputed formula) that just needs a white-box fixture. Reserve `autoClass: 'agent'` for the rare case where **no deterministic oracle exists** (fuzzy NL output, "is this ranking reasonable"). Examples below:
+
+- **State machines** — every legal transition passes; every illegal one is rejected (e.g. `PAID→CANCELLED` ok, `CANCELLED→PAID` forbidden). Oracle: the persisted status after the call.
+- **Computed values / formulas** — recompute the expected number independently and compare (fees, discounts, proration, tax, totals). Oracle: recompute from inputs, compare to response/DB. Don't just assert "a number came back."
+- **Invariants** — things that must always hold (balance never negative, sum of splits == total, stock conserved). Oracle: query the aggregate after the operation.
+- **Idempotency / retries** — same request twice ⇒ one effect, not two. Oracle: count rows / effects.
+- **Multi-step flows** — a sequence where step N depends on N-1's state (create → reserve → pay → refund). One case = the whole chain; `agentHint` describes the setup.
+- **Side-effects beyond the response** — emitted events, audit logs, rows in secondary tables, outbound calls. A `200` response does not prove the side-effect happened. Oracle: the side-effect's real sink.
+
+For each, write `oracle` (where truth is) + `agentHint` (setup + rule + what to verify). These are almost all `auto` (white-box): the oracle is a deterministic side-channel the runner asserts against — it just needs DB/broker/log access. If the truth is fully in the response, keep it `auto` with the formula in `expect`. Only mark `agent` when the output is genuinely fuzzy and no assertion can decide it even with full DB access.
 
 ### Step 2: Output the full HTML
 
@@ -265,6 +294,19 @@ Use this template verbatim, replacing only the marked placeholders:
     color: #0369a1;
   }
   .tc-expect strong { font-weight: 700; }
+  .tc-oracle {
+    margin-top: 6px; font-size: 12px;
+    background: #fefce8; border-left: 3px solid #eab308;
+    padding: 6px 10px; border-radius: 0 4px 4px 0;
+    color: #854d0e;
+  }
+  .tc-hint {
+    margin-top: 6px; font-size: 12px;
+    background: #f5f3ff; border-left: 3px solid #8b5cf6;
+    padding: 6px 10px; border-radius: 0 4px 4px 0;
+    color: #5b21b6;
+  }
+  .tc-oracle strong, .tc-hint strong { font-weight: 700; }
   .tc-note-wrap { margin-top: 8px; }
   .tc-note {
     width: 100%; font-size: 12px; border: 1px solid #e5e5e5;
@@ -294,6 +336,16 @@ Use this template verbatim, replacing only the marked placeholders:
   .pri-p1 { background: #fed7aa; color: #9a3412; }
   .pri-p2 { background: #fef08a; color: #854d0e; }
   .pri-p3 { background: #e5e7eb; color: #374151; }
+
+  .cls {
+    display: inline-block; font-size: 10px; font-weight: 700;
+    padding: 1px 6px; border-radius: 4px; margin-left: 6px;
+    vertical-align: middle;
+  }
+  .cls-auto { background: #dcfce7; color: #15803d; }
+  .cls-agent { background: #ede9fe; color: #6d28d9; }
+  .cls-manual { background: #e5e7eb; color: #374151; }
+  .cls-core { background: #ffe4e6; color: #9f1239; }
 
   .tc-status-badge {
     font-size: 10px; font-weight: 700; padding: 2px 8px;
@@ -376,6 +428,23 @@ function priHtml(pri) {
   return `<span class="pri ${cls}">${pri}</span>`;
 }
 
+function classHtml(tc) {
+  let h = '';
+  if (tc.depth === 'core') h += `<span class="cls cls-core">CORE</span>`;
+  if (tc.autoClass) {
+    const cls = { auto:'cls-auto', agent:'cls-agent', manual:'cls-manual' }[tc.autoClass] || 'cls-manual';
+    h += `<span class="cls ${cls}">${tc.autoClass.toUpperCase()}</span>`;
+  }
+  return h;
+}
+
+function oracleHtml(tc) {
+  let h = '';
+  if (tc.oracle) h += `<div class="tc-oracle"><strong>Oracle:</strong> ${tc.oracle}</div>`;
+  if (tc.agentHint) h += `<div class="tc-hint"><strong>Hint:</strong> ${tc.agentHint}</div>`;
+  return h;
+}
+
 function renderSection(sec) {
   const div = document.createElement('div');
   div.className = 'section';
@@ -405,10 +474,11 @@ function renderSection(sec) {
           onclick="onFail('${tc.id}')">FAIL</button>
       </div>
       <div class="tc-body">
-        <div class="tc-id">${tc.id} ${priHtml(tc.pri)}${tagHtml(tc.tag)}</div>
+        <div class="tc-id">${tc.id} ${priHtml(tc.pri)}${classHtml(tc)}${tagHtml(tc.tag)}</div>
         <div class="tc-title">${tc.title}</div>
         <div class="tc-desc">${tc.desc}</div>
         <div class="tc-expect"><strong>Expect:</strong> ${tc.expect}</div>
+        ${oracleHtml(tc)}
         <div class="tc-note-wrap">
           <textarea class="tc-note" placeholder="Ghi chú / lỗi gặp phải..."
             oninput="onNote('${tc.id}', this.value)">${s.note || ''}</textarea>

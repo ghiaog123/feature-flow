@@ -103,16 +103,17 @@ Before interviewing, check for a proposal produced by the `impl-status` skill:
    | `<h2>6. Checklist triển khai</h2>` | a **smoke / regression** section covering each rollout item |
 
 3. **Set `pri` from risk.** Default `P2`. Endpoint/flow named in a risk → `P0`. Core happy-path of a new endpoint → `P1`. Cosmetic/optional → `P3`.
-4. **Deep pass — read the implemented code, not just the proposal.** The proposal gives the API surface; the *core logic* lives in the handlers/services. When the code exists, read it and derive cases that exercise it (see "Core-logic test design" below), then set the contract fields per case:
+4. **Scope gate — agree scope in plain language BEFORE the deep pass.** This is the single scope-confirmation point. Do it now, after you have a candidate scope from the proposal but *before* reading code / authoring cases — so you don't deep-pass areas the user then trims. See "Scope gate" below.
+5. **Deep pass — read the implemented code, not just the proposal.** Only over the areas the user kept in scope. The proposal gives the API surface; the *core logic* lives in the handlers/services. When the code exists, read it and derive cases that exercise it (see "Core-logic test design" below), then set the contract fields per case:
    - `depth`: `core` if the case hits a state machine / formula / invariant / idempotency / concurrency / multi-step flow; else `surface`.
    - `autoClass`: `auto` (a deterministic assertion captures it — incl. white-box oracle: DB row / event / log / recomputed value) · `agent` (no deterministic oracle exists — fuzzy NL / ranking / recommendation needing judgement) · `manual` (visual/UX/human). Most `core` cases are `auto` (often white-box).
    - `oracle`: where the truth lives beyond the response (DB row, computed value, emitted event, log) — for white-box `auto` cases and as grounding for `agent` cases.
    - `agentHint`: setup + the business rule under test + what to verify. Guidance only — not exact paths/payloads.
 
    **If the code is NOT written yet** (TDD-style: test plan before implement) — do not block. Derive `depth`/`autoClass`/`oracle`/`agentHint` from the proposal as best you can and prefix `agentHint` with `provisional:`, or omit the fields. The runner will ground them against real code later.
-5. **Confirm scope before generating.** Show the user the derived section list + case count + the auto/agent/manual split, let them trim/add, then emit the HTML.
+6. **Append the test plan into the scope doc.** After the deep pass, author the cases and append the plan sections *below* the agreed scope in the same HTML file (see "Scope gate" — one living document: scope on top, plan underneath). No second scope confirmation — scope was already locked at step 4.
 
-**If no proposal exists → fall back to Step 1 (interview / feature description).** Do not block on a missing proposal — many features skip the design doc. Still do the deep pass against whatever code exists.
+**If no proposal exists → fall back to Step 1 (interview / feature description).** Do not block on a missing proposal — many features skip the design doc. The scope gate still applies (run it on whatever the user describes). Still do the deep pass against whatever code exists.
 
 ### Step 1: Interview (if needed)
 
@@ -123,6 +124,20 @@ Ask the user for:
 - **Test cases per section** — ID scheme, title, description, expected result, optional tag
 
 If the user gives a feature description or API spec, derive the test cases yourself and confirm before generating.
+
+### Scope gate (run before authoring — both paths)
+
+One scope-confirmation point. Runs after you have a candidate scope (from the proposal in Step 0, or from the user's description in Step 1) and **before** the deep pass + case authoring. Two parts: a plain-language agreement, then a living HTML doc that the test plan is later appended into.
+
+**1. Agree scope in plain language — no jargon.** Talk in terms the user (incl. a PO/QC) understands. Keep `depth`/`autoClass`/`oracle`/`agent`/`manual` OUT of this — those are set later in the deep pass. Cover only:
+- **What's covered** — which feature / flows / endpoints (by name, in plain words).
+- **What's OUT of scope** — explicitly list what you will *not* test (and why: out of this release, owned elsewhere, unchanged, etc.). The out-of-scope list matters as much as the in-scope one.
+- **Depth** — quick **smoke** (critical happy paths only) vs **standard** (happy + main negative/boundary) vs **thorough** (full positive/negative/boundary/edge + regression).
+- **Environment / data / preconditions** — where it runs, what test data/accounts are needed.
+
+Use `AskUserQuestion` to make this fast: a multiSelect on the candidate areas (which to keep in scope) plus a single-select depth choice. Let the user trim, add, or move items to out-of-scope. **Do not start the deep pass until the user confirms.**
+
+**2. Write the agreed scope into a living HTML doc.** The moment scope is locked, write it as the **top** of the output HTML file (the `.scope-doc` block — see template): in-scope list, out-of-scope list, depth, environment/data, and a "Chốt scope lúc …" line. This file is the single living document — the test plan sections get appended **below** this scope block in step 6, same file. So the reader sees *what was agreed* first, then *the cases that realize it*. If scope changes later, update the scope block in place and reconcile the sections beneath it.
 
 ### Test Design Methodology (apply when deriving cases)
 
@@ -356,6 +371,29 @@ Use this template verbatim, replacing only the marked placeholders:
   .badge-fail { background: #fee2e2; color: #991b1b; }
   .badge-todo { background: #f3f4f6; color: #6b7280; }
 
+  .scope-doc {
+    background: #fff; border: 1px solid #e5e5e5; border-radius: 10px;
+    margin-bottom: 16px; overflow: hidden;
+  }
+  .scope-doc .scope-head {
+    padding: 14px 20px; background: #eef2ff; border-bottom: 1px solid #e0e7ff;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .scope-doc .scope-head h2 { font-size: 15px; font-weight: 700; color: #3730a3; flex: 1; }
+  .scope-doc .scope-locked { font-size: 12px; color: #6366f1; }
+  .scope-doc .scope-depth {
+    font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 10px;
+    background: #c7d2fe; color: #3730a3;
+  }
+  .scope-body { padding: 16px 20px; font-size: 13px; line-height: 1.6; color: #333; }
+  .scope-body h3 { font-size: 13px; margin: 12px 0 4px; color: #1a1a2e; }
+  .scope-body h3:first-child { margin-top: 0; }
+  .scope-body ul { margin: 0 0 4px 20px; }
+  .scope-in li::marker { color: #16a34a; }
+  .scope-out li::marker { color: #dc2626; }
+  .scope-out li { color: #6b7280; }
+  .scope-meta { margin-top: 10px; font-size: 12px; color: #555; }
+
   @media print {
     .actions, .tc-note-wrap, .tc-check { display: none; }
     .tc.done .tc-title::after { content: ' ✓'; color: #16a34a; }
@@ -390,6 +428,20 @@ Use this template verbatim, replacing only the marked placeholders:
 
 <script>
 const STORAGE_KEY = '{{STORAGE_KEY}}';
+
+// Agreed test scope (locked at the scope gate, BEFORE the plan below was authored).
+// This is the living scope doc; the `plan` sections underneath realize it.
+const scope = {
+  locked: '{{SCOPE_LOCKED_AT}}',        // e.g. '2026-06-06'
+  depth: '{{SCOPE_DEPTH}}',             // 'smoke' | 'standard' | 'thorough'
+  inScope: [
+    // 'Plain-language area / flow that IS covered',
+  ],
+  outScope: [
+    // 'Plain-language area that is NOT covered (+ why)',
+  ],
+  env: '{{SCOPE_ENV}}',                 // env / test data / preconditions, plain words; '' to hide
+};
 
 const plan = [
   // {{REPLACE WITH ACTUAL TEST DATA}}
@@ -568,6 +620,15 @@ function exportReport() {
 
   let md = `# {{SERVICE_NAME}} — {{PHASE_LABEL}} Test Report\n`;
   md += `Date: ${new Date().toLocaleString('vi-VN')}\n\n`;
+  if (scope && (scope.inScope?.length || scope.outScope?.length)) {
+    md += `## Phạm vi test (scope)\n`;
+    if (scope.depth) md += `Depth: **${scope.depth}**`;
+    if (scope.locked) md += `${scope.depth ? ' · ' : ''}Chốt scope: ${scope.locked}`;
+    md += `\n\n`;
+    if (scope.inScope?.length) md += `**Trong phạm vi:**\n${scope.inScope.map(x => `- ${x}`).join('\n')}\n\n`;
+    if (scope.outScope?.length) md += `**Ngoài phạm vi:**\n${scope.outScope.map(x => `- ${x}`).join('\n')}\n\n`;
+    if (scope.env) md += `**Môi trường / dữ liệu:** ${scope.env}\n\n`;
+  }
   md += `| | Count |\n|---|---|\n`;
   md += `| Total | ${total} |\n| Pass | ${pass} |\n| Fail | ${fail} |\n| TODO | ${todo} |\n\n`;
 
@@ -589,9 +650,29 @@ function exportReport() {
   a.click();
 }
 
+function renderScope() {
+  if (!scope || (!scope.inScope?.length && !scope.outScope?.length)) return;
+  const li = arr => (arr || []).map(x => `<li>${x}</li>`).join('');
+  const depth = scope.depth ? `<span class="scope-depth">${scope.depth.toUpperCase()}</span>` : '';
+  const locked = scope.locked ? `<span class="scope-locked">Chốt scope: ${scope.locked}</span>` : '';
+  const div = document.createElement('div');
+  div.className = 'scope-doc';
+  div.innerHTML = `
+    <div class="scope-head"><h2>Phạm vi test (scope)</h2>${depth}${locked}</div>
+    <div class="scope-body">
+      ${scope.inScope?.length ? `<h3>✅ Trong phạm vi</h3><ul class="scope-in">${li(scope.inScope)}</ul>` : ''}
+      ${scope.outScope?.length ? `<h3>🚫 Ngoài phạm vi</h3><ul class="scope-out">${li(scope.outScope)}</ul>` : ''}
+      ${scope.env ? `<div class="scope-meta"><strong>Môi trường / dữ liệu:</strong> ${scope.env}</div>` : ''}
+    </div>
+  `;
+  return div;
+}
+
 // --- init ---
 loadState();
 const main = document.getElementById('main');
+const scopeEl = renderScope();
+if (scopeEl) main.appendChild(scopeEl);
 plan.forEach(sec => main.appendChild(renderSection(sec)));
 updateStats();
 </script>
@@ -607,7 +688,12 @@ updateStats();
 | `{{PHASE_LABEL}}` | Phase or test type (e.g. "Happy Path", "Regression v2", "Edge Cases") |
 | `{{SUBTITLE}}` | Short subtitle shown below h1 (e.g. "document_service · Phase 1: Happy Path") |
 | `{{STORAGE_KEY}}` | Unique localStorage key, e.g. `doc_svc_test_v1` |
+| `{{SCOPE_LOCKED_AT}}` | Date scope was agreed at the scope gate, e.g. `2026-06-06` |
+| `{{SCOPE_DEPTH}}` | `smoke` \| `standard` \| `thorough` (from the scope gate) |
+| `{{SCOPE_ENV}}` | Env / test data / preconditions in plain words; `''` to hide |
 | `{{REPLACE WITH ACTUAL TEST DATA}}` | The actual `plan` array entries |
+
+Fill `scope.inScope` / `scope.outScope` from the agreed scope gate (plain language). The scope block renders above all sections — it is the living scope doc; the plan sections are appended below it.
 
 Also replace `{{SERVICE_NAME}}` and `{{PHASE_LABEL}}` inside the `exportReport()` function.
 
@@ -619,8 +705,12 @@ Also replace `{{SERVICE_NAME}}` and `{{PHASE_LABEL}}` inside the `exportReport()
 
 ## Output
 
-Write the final HTML to a file in the current working directory:
+One living HTML file holds both the agreed scope (top) and the test plan (sections below). Write it in two phases:
+
+1. **At scope lock (scope gate):** write the file with `scope` filled and `plan` empty (or a stub). Show it to the user — this is the scope-agreement doc.
+2. **After the deep pass:** fill `plan` and rewrite the same file — the plan now sits beneath the scope block. Same filename, no second file.
+
 - Filename: `test_plan_<phase_slug>.html` (e.g. `test_plan_happy_path.html`, `test_plan_regression.html`)
 - Open with: `open <filename>` so the user can see it immediately
 
-Tell the user the filename and that they can open it in any browser — no server needed.
+Tell the user the filename and that they can open it in any browser — no server needed. If scope changes later, edit the `scope` block in place and reconcile the sections below it.

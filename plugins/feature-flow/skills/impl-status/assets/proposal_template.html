@@ -180,10 +180,42 @@
   }
   .diagram .mermaid { font-family: "IBM Plex Sans", sans-serif; }
   .diagram-cap { color: var(--text-muted); font-size: 12px; margin-top: 6px; }
+
+  /* TL;DR — ý tưởng core bằng ngôn ngữ thường, đọc 10 giây hiểu được */
+  .tldr {
+    background: var(--accent-bg);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--accent);
+    border-radius: var(--radius-sm);
+    padding: 14px 18px;
+    margin-bottom: 18px;
+  }
+  .tldr h3 {
+    margin: 0 0 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .tldr p { margin: 0; font-size: 14px; color: var(--text); }
 </style>
 <script type="module">
   import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
-  mermaid.initialize({ startOnLoad: true, theme: 'neutral', securityLevel: 'loose' });
+  mermaid.initialize({
+    startOnLoad: true,
+    securityLevel: 'loose',
+    theme: 'base',
+    themeVariables: {
+      fontFamily: '"IBM Plex Sans", sans-serif',
+      primaryColor: '#EFF6FF',
+      primaryBorderColor: '#2563EB',
+      primaryTextColor: '#0F172A',
+      lineColor: '#64748B',
+      secondaryColor: '#F5F3FF',
+      tertiaryColor: '#F0FDF4',
+    },
+  });
 </script>
 </head>
 <body>
@@ -192,6 +224,13 @@
     <h1>{{FEATURE}} — Proposal</h1>
     <div class="sub">{{ONE_LINE_SUMMARY}} · {{DATE}}</div>
   </header>
+
+  <div class="tldr">
+    <h3>Ý tưởng core (TL;DR)</h3>
+    <!-- 1–3 câu ngôn ngữ thường, KHÔNG jargon: làm gì + giải quyết đau gì.
+         User đọc 10 giây hiểu được trước khi vào chi tiết kĩ thuật. -->
+    <p></p>
+  </div>
 
   <section>
     <h2>1. Bối cảnh &amp; Vấn đề</h2>
@@ -253,12 +292,26 @@ erDiagram
     <div class="diagram">
       <pre class="mermaid">
 flowchart LR
-    A[Client gửi request] --> B{Hợp lệ?}
-    B -->|Có| C[Update DB]
-    B -->|Không| E[Trả 409]
-    C --> D[Trả 200]
+    A([👤 Client]) --> B{Hợp lệ?}
+    B -->|✓ Có| C[/⚙️ Update DB/]
+    B -->|✗ Không| E([❌ 409])
+    C --> F[(🗄️ Postgres)]
+    C --> D([✅ 200])
+
+    classDef start fill:#EFF6FF,stroke:#2563EB,color:#0F172A,stroke-width:2px;
+    classDef check fill:#FFFBEB,stroke:#D97706,color:#0F172A,stroke-width:2px;
+    classDef proc  fill:#F5F3FF,stroke:#7C3AED,color:#0F172A,stroke-width:2px;
+    classDef data  fill:#F8FAFC,stroke:#64748B,color:#0F172A,stroke-width:2px;
+    classDef ok    fill:#F0FDF4,stroke:#16A34A,color:#0F172A,stroke-width:2px;
+    classDef err   fill:#FEF2F2,stroke:#DC2626,color:#0F172A,stroke-width:2px;
+    class A start;
+    class B check;
+    class C proc;
+    class F data;
+    class D ok;
+    class E err;
       </pre>
-      <div class="diagram-cap">Luồng xử lý — flowchart đơn giản</div>
+      <div class="diagram-cap">Luồng xử lý — hình + màu + icon phân vai trò: 🔵 vào · 🟡 quyết định · 🟣 xử lý · 🟢 thành công · 🔴 lỗi</div>
     </div>
     <!-- Chỉ thêm vài dòng text cho chi tiết diagram không tải nổi (vd: rule validate cụ thể) -->
   </section>

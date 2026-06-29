@@ -8,9 +8,9 @@
     {
       "name": "feature-flow",
       "source": "./plugins/feature-flow",
-      "description": "Bundle of 5 skills closing the loop proposal → implement → API docs → test plan → auto-test → stakeholder brief: impl-status, api-contract-writer, test-case-writer, service-test-runner, feature-brief.",
+      "description": "Bundle of 9 skills closing the loop problem → plan → implement+review → API docs → test plan → auto-test → stakeholder brief → deep-understanding handoff, with a Claude⇄Codex peer-debate trio at the front: impl-status, api-contract-writer, test-case-writer, service-test-runner, feature-brief, comprehension-coach, problem-solver, implementation-planner, plan-implementer.",
       "license": "MIT",
-      "keywords": ["impl-status", "api-contract-writer", "test-case-writer", "service-test-runner", "feature-brief", "qa", "test-plan", "status-tracking", "api-docs", "stakeholder-docs"]
+      "keywords": ["impl-status", "api-contract-writer", "test-case-writer", "service-test-runner", "feature-brief", "comprehension-coach", "problem-solver", "implementation-planner", "plan-implementer", "qa", "test-plan", "status-tracking", "api-docs", "stakeholder-docs", "codex", "peer-debate", "decision", "implementation-plan", "code-review"]
     }
   ]
 }

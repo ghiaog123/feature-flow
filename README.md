@@ -4,14 +4,14 @@ Claude Code plugin bundling 6 skills that close the loop **proposal → implemen
 
 | Skill | What it does | Invoke |
 |-------|--------------|--------|
-| **impl-status** | Maintains a live HTML implementation-status tracker (`docs/features/<feature>/implementation_status.html`) recording progress, decisions, compromises, bugs, files changed, rollout checklist. Optionally generates a design `proposal.html` first. Resumable across sessions. | `/feature-flow:impl-status` |
-| **api-contract-writer** | Reads a service's source code and writes a concise caller-facing Markdown API contract — request/response shapes, status codes, error conditions only. Semi-automatic: lists discovered endpoints, waits for scope confirmation, then generates the contract. | `/feature-flow:api-contract-writer` |
-| **test-case-writer** | Generates a self-contained interactive HTML test plan (collapsible sections, pass/fail tracking, progress bar, localStorage persistence, Markdown export). Derives cases from an impl-status proposal when one exists; applies risk-based QA methodology (P0–P3, positive/negative/boundary). | `/feature-flow:test-case-writer` |
-| **service-test-runner** | Translates the manual test plan into executable pytest tests, runs them against the implemented service, and reports PASS/FAIL/SKIP keyed back to each TC-id. | `/feature-flow:service-test-runner` |
-| **feature-brief** | Generates a non-technical one-page HTML "Feature Brief" for PO/QC — what changed, why, how it flows, acceptance criteria, test results, gaps. Synthesizes from `docs/features/<feature>/` artifacts (proposal, test plan, status) when present; translates technical concepts into everyday metaphors with concrete persona examples. | `/feature-flow:feature-brief` |
-| **comprehension-coach** | Acts as a patient expert teacher that makes a human *deeply* understand a change/feature/session — not just nod along. Teaches incrementally (problem → solution → impact), keeps a running understanding-checklist (`comprehension.md`), drills the WHYs, quizzes via `AskUserQuestion`, and won't "finish" until every checklist item is demonstrated. Source is flexible: current session, git diff/PR, or `docs/features/<feature>/`. | `/feature-flow:comprehension-coach` |
+| **ff-impl-status** | Maintains a live HTML implementation-status tracker (`docs/features/<feature>/implementation_status.html`) recording progress, decisions, compromises, bugs, files changed, rollout checklist. Optionally generates a design `proposal.html` first. Resumable across sessions. | `/feature-flow:ff-impl-status` |
+| **ff-api-contract-writer** | Reads a service's source code and writes a concise caller-facing Markdown API contract — request/response shapes, status codes, error conditions only. Semi-automatic: lists discovered endpoints, waits for scope confirmation, then generates the contract. | `/feature-flow:ff-api-contract-writer` |
+| **ff-test-case-writer** | Generates a self-contained interactive HTML test plan (collapsible sections, pass/fail tracking, progress bar, localStorage persistence, Markdown export). Derives cases from an ff-impl-status proposal when one exists; applies risk-based QA methodology (P0–P3, positive/negative/boundary). | `/feature-flow:ff-test-case-writer` |
+| **ff-service-test-runner** | Translates the manual test plan into executable pytest tests, runs them against the implemented service, and reports PASS/FAIL/SKIP keyed back to each TC-id. | `/feature-flow:ff-service-test-runner` |
+| **ff-feature-brief** | Generates a non-technical one-page HTML "Feature Brief" for PO/QC — what changed, why, how it flows, acceptance criteria, test results, gaps. Synthesizes from `docs/features/<feature>/` artifacts (proposal, test plan, status) when present; translates technical concepts into everyday metaphors with concrete persona examples. | `/feature-flow:ff-feature-brief` |
+| **ff-comprehension-coach** | Acts as a patient expert teacher that makes a human *deeply* understand a change/feature/session — not just nod along. Teaches incrementally (problem → solution → impact), keeps a running understanding-checklist (`comprehension.md`), drills the WHYs, quizzes via `AskUserQuestion`, and won't "finish" until every checklist item is demonstrated. Source is flexible: current session, git diff/PR, or `docs/features/<feature>/`. | `/feature-flow:ff-comprehension-coach` |
 
-Status tracking and test running are **explicit-invoke** — they do not auto-trigger on ordinary "implement X" requests. `test-case-writer` triggers on any request to write test cases / test plans; `api-contract-writer` triggers on requests to document APIs / write API contracts.
+Status tracking and test running are **explicit-invoke** — they do not auto-trigger on ordinary "implement X" requests. `ff-test-case-writer` triggers on any request to write test cases / test plans; `ff-api-contract-writer` triggers on requests to document APIs / write API contracts.
 
 ## Install
 
@@ -22,11 +22,11 @@ Status tracking and test running are **explicit-invoke** — they do not auto-tr
 
 ## Typical workflow
 
-1. `/feature-flow:impl-status` → design `proposal.html`, then track implementation in `implementation_status.html`.
-2. `/feature-flow:api-contract-writer` → document the implemented endpoints as a caller-facing Markdown contract.
-3. `/feature-flow:test-case-writer` → derive an interactive HTML test plan from the proposal.
-4. `/feature-flow:service-test-runner` → turn the plan into pytest, run it, get per-TC results + ship/no-ship verdict.
-5. `/feature-flow:feature-brief` → one-page non-technical brief for PO/QC handoff, synthesized from the artifacts above.
+1. `/feature-flow:ff-impl-status` → design `proposal.html`, then track implementation in `implementation_status.html`.
+2. `/feature-flow:ff-api-contract-writer` → document the implemented endpoints as a caller-facing Markdown contract.
+3. `/feature-flow:ff-test-case-writer` → derive an interactive HTML test plan from the proposal.
+4. `/feature-flow:ff-service-test-runner` → turn the plan into pytest, run it, get per-TC results + ship/no-ship verdict.
+5. `/feature-flow:ff-feature-brief` → one-page non-technical brief for PO/QC handoff, synthesized from the artifacts above.
 
 Artifacts land under `docs/features/<feature>/` in your repo:
 
@@ -46,12 +46,12 @@ docs/features/<feature>/
 plugins/feature-flow/
 ├── .claude-plugin/plugin.json       # plugin manifest
 └── skills/
-    ├── impl-status/                 # SKILL.md + proposal/status HTML templates + triggering reference
-    ├── api-contract-writer/         # SKILL.md + contract-format reference
-    ├── test-case-writer/            # SKILL.md
-    ├── service-test-runner/         # SKILL.md
-    ├── feature-brief/               # SKILL.md + one-pager HTML template
-    └── comprehension-coach/         # SKILL.md (interactive teach-until-understood)
+    ├── ff-impl-status/                 # SKILL.md + proposal/status HTML templates + triggering reference
+    ├── ff-api-contract-writer/         # SKILL.md + contract-format reference
+    ├── ff-test-case-writer/            # SKILL.md
+    ├── ff-service-test-runner/         # SKILL.md
+    ├── ff-feature-brief/               # SKILL.md + one-pager HTML template
+    └── ff-comprehension-coach/         # SKILL.md (interactive teach-until-understood)
 ```
 
 ## License

@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="{{LANG}}">
+<head>
+<meta charset="utf-8" />
+<title>{{FEATURE}} — proposal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #FAFAF9;
+    --surface: #FFFFFF;
+    --surface-2: #F8FAFC;
+    --border: #E2E8F0;
+    --border-strong: #CBD5E1;
+    --text: #0F172A;
+    --text-muted: #64748B;
+    --text-soft: #475569;
+
+    --accent: #2563EB;
+    --accent-bg: #EFF6FF;
+    --success: #16A34A;
+    --success-bg: #F0FDF4;
+    --warn: #D97706;
+    --warn-bg: #FFFBEB;
+    --danger: #DC2626;
+    --danger-bg: #FEF2F2;
+    --violet: #7C3AED;
+    --violet-bg: #F5F3FF;
+
+    --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04);
+    --shadow: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    font-family: "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    font-size: 14px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 40px 24px 96px; }
+
+  header.page { margin-bottom: 28px; }
+  h1 { font-size: 28px; line-height: 1.2; margin: 0 0 8px; font-weight: 700; letter-spacing: -0.015em; }
+  .sub { color: var(--text-muted); font-size: 14px; }
+
+  section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 22px 26px;
+    margin-bottom: 18px;
+    box-shadow: var(--shadow-sm);
+  }
+  section h2 {
+    font-size: 16px;
+    margin: 0 0 14px;
+    color: var(--text);
+    font-weight: 600;
+    letter-spacing: -0.005em;
+  }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  thead th {
+    text-align: left;
+    padding: 10px 12px;
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    background: var(--surface-2);
+    border-bottom: 1px solid var(--border);
+  }
+  tbody td { padding: 11px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tbody tr:last-child td { border-bottom: 0; }
+
+  code, pre {
+    font-family: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 12.5px;
+  }
+  code {
+    background: var(--surface-2);
+    padding: 1.5px 6px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+  pre {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 14px 16px;
+    overflow-x: auto;
+    line-height: 1.55;
+  }
+  pre code { background: transparent; border: 0; padding: 0; }
+
+  ul, ol { margin: 6px 0; padding-left: 22px; }
+  li { font-size: 13.5px; margin-bottom: 6px; }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 14px;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 16px 18px;
+  }
+  .card.pros { border-top: 3px solid var(--success); }
+  .card.cons { border-top: 3px solid var(--warn); }
+  .card.alt  { border-top: 3px solid var(--text-muted); }
+  .card h3 {
+    margin: 0 0 10px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .card ul { margin: 0; padding-left: 18px; }
+  .card li { font-size: 13px; color: var(--text); }
+
+  .tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 2px 9px;
+    border-radius: 999px;
+    font-size: 11.5px;
+    font-weight: 600;
+    line-height: 1.6;
+    border: 1px solid transparent;
+  }
+  .t-add  { background: var(--success-bg); color: var(--success); border-color: rgba(22, 163, 74, 0.2); }
+  .t-mod  { background: var(--accent-bg);  color: var(--accent);  border-color: rgba(37, 99, 235, 0.2); }
+  .t-warn { background: var(--warn-bg);    color: var(--warn);    border-color: rgba(217, 119, 6, 0.2); }
+  .t-del  { background: var(--danger-bg);  color: var(--danger);  border-color: rgba(220, 38, 38, 0.2); }
+
+  .method { font-weight: 600; font-family: "JetBrains Mono", ui-monospace, Menlo, monospace; font-size: 12px; padding: 2px 7px; border-radius: 4px; }
+  .m-get   { color: var(--success); background: var(--success-bg); }
+  .m-put   { color: var(--violet);  background: var(--violet-bg); }
+  .m-post  { color: var(--violet);  background: var(--violet-bg); }
+  .m-patch { color: var(--warn);    background: var(--warn-bg); }
+  .m-del   { color: var(--danger);  background: var(--danger-bg); }
+
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  @media (max-width: 640px) {
+    .wrap { padding: 28px 18px 72px; }
+    h1 { font-size: 22px; }
+    section { padding: 18px 18px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+
+  /* Mermaid diagram container — dùng cho logic kĩ thuật (luồng, quan hệ data, state) */
+  .diagram {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 18px;
+    margin: 10px 0;
+    overflow-x: auto;
+    text-align: center;
+  }
+  .diagram .mermaid { font-family: "IBM Plex Sans", sans-serif; }
+  .diagram-cap { color: var(--text-muted); font-size: 12px; margin-top: 6px; }
+
+  /* TL;DR — ý tưởng core bằng ngôn ngữ thường, đọc 10 giây hiểu được */
+  .tldr {
+    background: var(--accent-bg);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--accent);
+    border-radius: var(--radius-sm);
+    padding: 14px 18px;
+    margin-bottom: 18px;
+  }
+  .tldr h3 {
+    margin: 0 0 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .tldr p { margin: 0; font-size: 14px; color: var(--text); }
+</style>
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({
+    startOnLoad: true,
+    securityLevel: 'loose',
+    theme: 'base',
+    themeVariables: {
+      fontFamily: '"IBM Plex Sans", sans-serif',
+      primaryColor: '#EFF6FF',
+      primaryBorderColor: '#2563EB',
+      primaryTextColor: '#0F172A',
+      lineColor: '#64748B',
+      secondaryColor: '#F5F3FF',
+      tertiaryColor: '#F0FDF4',
+    },
+  });
+</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="page">
+    <h1>{{FEATURE}} — Proposal</h1>
+    <div class="sub">{{ONE_LINE_SUMMARY}} · {{DATE}}</div>
+  </header>
+
+  <div class="tldr">
+    <h3>Ý tưởng core (TL;DR)</h3>
+    <!-- 1–3 câu ngôn ngữ thường, KHÔNG jargon: làm gì + giải quyết đau gì.
+         User đọc 10 giây hiểu được trước khi vào chi tiết kĩ thuật. -->
+    <p></p>
+  </div>
+
+  <section>
+    <h2>1. Bối cảnh &amp; Vấn đề</h2>
+    <!-- 1–2 đoạn: tại sao cần làm, đang đau ở đâu, trigger nào dẫn tới đề xuất này -->
+  </section>
+
+  <section>
+    <h2>2. Mục tiêu &amp; Scope</h2>
+    <!-- 1 đoạn mục tiêu: xong nghĩa là gì -->
+    <div class="grid">
+      <div class="card pros"><h3>In-scope</h3><ul><!-- làm gì --></ul></div>
+      <div class="card alt"><h3>Non-goals</h3><ul><!-- KHÔNG làm gì — chặn scope creep --></ul></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>3. Thay đổi data model</h2>
+    <table>
+      <thead><tr><th>Layer</th><th>Thay đổi</th><th>Ghi chú</th></tr></thead>
+      <tbody>
+        <!-- <tr><td>Postgres</td><td><span class="tag t-add">ADD</span> column ...</td><td>...</td></tr> -->
+      </tbody>
+    </table>
+    <!-- Quan hệ giữa entity → vẽ erDiagram thay vì mô tả bằng text -->
+    <div class="diagram">
+      <pre class="mermaid">
+erDiagram
+    PROJECT ||--o{ TASK : has
+    TASK }o--|| USER : "assigned to"
+    PROJECT {
+      uuid id PK
+      string name
+    }
+    TASK {
+      uuid id PK
+      uuid project_id FK
+      uuid assignee_id FK
+      string status
+    }
+      </pre>
+      <div class="diagram-cap">ER — quan hệ entity sau thay đổi</div>
+    </div>
+  </section>
+
+  <section>
+    <h2>4. API surface</h2>
+    <table>
+      <thead><tr><th style="width:80px;">Method</th><th>Path</th><th>Mô tả</th></tr></thead>
+      <tbody>
+        <!-- <tr><td><span class="method m-put">PUT</span></td><td><code>/...</code></td><td>...</td></tr> -->
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>5. Luồng chi tiết</h2>
+    <!-- Logic kĩ thuật → diagram ĐƠN GIẢN cho dễ nhìn, không cần sequenceDiagram.
+         Ưu tiên flowchart (box + mũi tên). Sequence/state chỉ khi thật cần. -->
+    <div class="diagram">
+      <pre class="mermaid">
+flowchart LR
+    A([👤 Client]) --> B{Hợp lệ?}
+    B -->|✓ Có| C[/⚙️ Update DB/]
+    B -->|✗ Không| E([❌ 409])
+    C --> F[(🗄️ Postgres)]
+    C --> D([✅ 200])
+
+    classDef start fill:#EFF6FF,stroke:#2563EB,color:#0F172A,stroke-width:2px;
+    classDef check fill:#FFFBEB,stroke:#D97706,color:#0F172A,stroke-width:2px;
+    classDef proc  fill:#F5F3FF,stroke:#7C3AED,color:#0F172A,stroke-width:2px;
+    classDef data  fill:#F8FAFC,stroke:#64748B,color:#0F172A,stroke-width:2px;
+    classDef ok    fill:#F0FDF4,stroke:#16A34A,color:#0F172A,stroke-width:2px;
+    classDef err   fill:#FEF2F2,stroke:#DC2626,color:#0F172A,stroke-width:2px;
+    class A start;
+    class B check;
+    class C proc;
+    class F data;
+    class D ok;
+    class E err;
+      </pre>
+      <div class="diagram-cap">Luồng xử lý — hình + màu + icon phân vai trò: 🔵 vào · 🟡 quyết định · 🟣 xử lý · 🟢 thành công · 🔴 lỗi</div>
+    </div>
+    <!-- Chỉ thêm vài dòng text cho chi tiết diagram không tải nổi (vd: rule validate cụ thể) -->
+  </section>
+
+  <section>
+    <h2>6. Tiêu chí nghiệm thu</h2>
+    <!-- acceptance criteria — điều kiện kiểm chứng được "feature đạt"; ff-test-case-writer + ff-feature-brief map thẳng từ đây -->
+    <ul>
+      <!-- <li>Given ... When ... Then ...</li> -->
+    </ul>
+  </section>
+
+  <section>
+    <h2>7. Đánh giá</h2>
+    <div class="grid">
+      <div class="card pros"><h3>Ưu</h3><ul><!-- ... --></ul></div>
+      <div class="card cons"><h3>Rủi ro</h3><ul><!-- ... --></ul></div>
+      <div class="card alt"><h3>Alternative đã loại</h3><ul><!-- ... --></ul></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>8. Checklist triển khai</h2>
+    <ul>
+      <!-- high-level items, sẽ được sao chép vào status file khi implement -->
+    </ul>
+  </section>
+</div>
+</body>
+</html>

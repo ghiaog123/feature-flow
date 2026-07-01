@@ -8,9 +8,9 @@
     {
       "name": "feature-flow",
       "source": "./plugins/feature-flow",
-      "description": "Bundle of 9 skills closing the loop problem → plan → implement+review → API docs → test plan → auto-test → stakeholder brief → deep-understanding handoff, with a Claude⇄Codex peer-debate trio at the front: impl-status, api-contract-writer, test-case-writer, service-test-runner, feature-brief, comprehension-coach, problem-solver, implementation-planner, plan-implementer.",
+      "description": "Bundle of 9 skills closing the loop problem → plan → implement+review → API docs → test plan → auto-test → stakeholder brief → deep-understanding handoff, with a Claude⇄Codex peer-debate trio at the front: ff-impl-status, ff-api-contract-writer, ff-test-case-writer, ff-service-test-runner, ff-feature-brief, ff-comprehension-coach, ff-problem-solver, ff-planning, ff-implement.",
       "license": "MIT",
-      "keywords": ["impl-status", "api-contract-writer", "test-case-writer", "service-test-runner", "feature-brief", "comprehension-coach", "problem-solver", "implementation-planner", "plan-implementer", "qa", "test-plan", "status-tracking", "api-docs", "stakeholder-docs", "codex", "peer-debate", "decision", "implementation-plan", "code-review"]
+      "keywords": ["ff-impl-status", "ff-api-contract-writer", "ff-test-case-writer", "ff-service-test-runner", "ff-feature-brief", "ff-comprehension-coach", "ff-problem-solver", "ff-planning", "ff-implement", "qa", "test-plan", "status-tracking", "api-docs", "stakeholder-docs", "codex", "peer-debate", "decision", "implementation-plan", "code-review"]
     }
   ]
 }

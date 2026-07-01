@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="vi">
+<!--
+  FEATURE BRIEF TEMPLATE — dùng bởi skill ff-feature-brief.
+  Cách dùng: copy file này → docs/features/<feature>/feature_brief.html, điền các vùng <!- - FILL - ->.
+  Khối nào không áp dụng (vd chưa test) → xóa cả <section>.
+  Ngôn ngữ: theo ngôn ngữ user (đổi lang attribute + toàn bộ text).
+-->
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Feature Brief — <!-- FILL: tên feature dễ hiểu --></title>
+<style>
+  :root {
+    --bg: #FAFAF9; --surface: #FFFFFF; --surface-2: #F8FAFC;
+    --border: #E2E8F0; --border-strong: #CBD5E1;
+    --text: #0F172A; --text-muted: #64748B; --text-soft: #475569;
+    --accent: #2563EB; --accent-bg: #EFF6FF;
+    --green: #16A34A; --green-bg: #F0FDF4;
+    --amber: #D97706; --amber-bg: #FFFBEB;
+    --red: #DC2626; --red-bg: #FEF2F2;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+
+  header { background: #1a1a2e; color: #fff; padding: 22px 32px; }
+  header h1 { font-size: 19px; font-weight: 650; }
+  header .sub { font-size: 13px; opacity: .65; margin-top: 4px; }
+  header .badges { margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap; }
+  .hbadge { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 12px; }
+  .hb-green { background: #14532d; color: #86efac; }
+  .hb-blue { background: #1e3a5f; color: #93c5fd; }
+  .hb-amber { background: #553c0a; color: #fcd34d; }
+  .hb-red { background: #5f1e1e; color: #fda4a4; }
+
+  main { max-width: 920px; margin: 26px auto 60px; padding: 0 18px; }
+
+  section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 22px 26px; margin-bottom: 18px; }
+  h2 { font-size: 16px; font-weight: 650; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+  h2 .num { background: var(--text); color: #fff; border-radius: 50%; width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0; }
+  h3 { font-size: 13.5px; font-weight: 650; color: var(--text-soft); margin: 16px 0 8px; }
+  p { font-size: 13.5px; color: var(--text-soft); margin-bottom: 8px; }
+  .audience { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 10px; margin-left: auto; }
+  .aud-po { background: var(--accent-bg); color: var(--accent); }
+  .aud-qc { background: #f3e8ff; color: #7e22ce; }
+  .aud-both { background: var(--green-bg); color: var(--green); }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 8px 0; }
+  th { text-align: left; background: var(--surface-2); padding: 8px 12px; border: 1px solid var(--border); font-weight: 650; color: var(--text-soft); }
+  td { padding: 8px 12px; border: 1px solid var(--border); vertical-align: top; color: var(--text-soft); }
+  code { background: var(--surface-2); border: 1px solid var(--border); border-radius: 4px; padding: 1px 5px; font-size: 12px; font-family: 'SF Mono', Menlo, monospace; color: var(--text); }
+
+  /* Box ví dụ / hình dung nhanh (nền vàng nhạt) */
+  .example { background: var(--amber-bg); border: 1px solid #fde68a; border-radius: 8px; padding: 12px 16px; font-size: 13px; color: #78350f; margin: 10px 0; }
+  .example .extitle { font-weight: 700; margin-bottom: 4px; }
+
+  /* Hình vẽ phép tính quyền/điều kiện: dãy ô + toán tử */
+  .calc { display: flex; gap: 10px; flex-wrap: wrap; align-items: stretch; margin: 12px 0; }
+  .calc .step { flex: 1; min-width: 180px; border-radius: 10px; padding: 12px 14px; font-size: 12.5px; border: 1px solid var(--border); background: var(--surface-2); }
+  .calc .step .t { font-weight: 700; font-size: 12px; margin-bottom: 6px; color: var(--text); }
+  .calc .op { display: flex; align-items: center; font-size: 20px; font-weight: 800; color: var(--text-muted); }
+  .chip { display: inline-block; font-size: 11.5px; font-weight: 600; padding: 2px 8px; border-radius: 10px; margin: 2px 3px 2px 0; }
+  .ch-on { background: #dcfce7; color: #15803d; }                          /* được phép */
+  .ch-off { background: #fee2e2; color: #991b1b; text-decoration: line-through; }  /* bị tắt */
+  .ch-na { background: #e5e7eb; color: #6b7280; text-decoration: line-through; }   /* không áp dụng */
+  .calc .result { border: 2px solid var(--green); background: var(--green-bg); }
+
+  /* Acceptance criteria */
+  .ac { border: 1px solid var(--border); border-left: 4px solid var(--accent); border-radius: 0 8px 8px 0; padding: 10px 14px; margin-bottom: 10px; background: var(--surface-2); font-size: 13px; }
+  .ac .acid { font-weight: 700; color: var(--accent); margin-right: 6px; }
+  .ac b.g { color: var(--text-muted); font-weight: 700; }
+  .ac .exline { margin-top: 5px; font-size: 12.5px; color: #92400e; }
+
+  /* Card kết quả test */
+  .verdict { display: flex; gap: 14px; flex-wrap: wrap; margin: 10px 0; }
+  .vcard { flex: 1; min-width: 140px; border-radius: 10px; padding: 14px; text-align: center; border: 1px solid var(--border); }
+  .vcard .big { font-size: 26px; font-weight: 800; }
+  .vcard .lbl { font-size: 11.5px; color: var(--text-muted); font-weight: 600; margin-top: 2px; }
+  .v-pass { background: var(--green-bg); } .v-pass .big { color: var(--green); }
+  .v-skip { background: var(--amber-bg); } .v-skip .big { color: var(--amber); }
+  .v-fail { background: var(--red-bg); } .v-fail .big { color: var(--red); }
+
+  .callout { border-radius: 8px; padding: 12px 16px; font-size: 13px; margin: 10px 0; }
+  .co-green { background: var(--green-bg); border: 1px solid #bbf7d0; color: #166534; }
+  .co-amber { background: var(--amber-bg); border: 1px solid #fde68a; color: #92400e; }
+  .co-blue { background: var(--accent-bg); border: 1px solid #bfdbfe; color: #1e40af; }
+  .co-red { background: var(--red-bg); border: 1px solid #fecaca; color: #991b1b; }
+
+  ul.tight { margin: 6px 0 6px 20px; font-size: 13px; color: var(--text-soft); }
+  ul.tight li { margin-bottom: 5px; }
+
+  .mermaid { background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin: 10px 0; text-align: center; }
+  .links { font-size: 12.5px; color: var(--text-muted); }
+  .links a { color: var(--accent); text-decoration: none; }
+  .links a:hover { text-decoration: underline; }
+
+  @media print { .mermaid svg { max-width: 100% !important; } }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Feature Brief — <!-- FILL: tên feature, ngôn ngữ đời thường --></h1>
+  <div class="sub"><!-- FILL: repo · mã feature · "1 trang cho PO & QC" · ngày --></div>
+  <div class="badges">
+    <!-- FILL: 2-4 badge trạng thái. Classes: hb-green (test đạt), hb-blue (code), hb-amber (chưa bật/chờ), hb-red (blocker) -->
+    <span class="hbadge hb-green">TEST: …</span>
+    <span class="hbadge hb-blue">Code: …</span>
+    <span class="hbadge hb-amber">…</span>
+  </div>
+</header>
+
+<main>
+
+<!-- ════════ 0. TÓM TẮT 30 GIÂY (cả hai) ════════ -->
+<section>
+  <h2>📌 Tóm tắt 30 giây</h2>
+  <p><!-- FILL: 2-3 câu: hệ thống làm gì, trước đây thiếu gì, feature này thêm gì. KHÔNG thuật ngữ. --></p>
+  <div class="example">
+    <div class="extitle">🏢 Hình dung nhanh</div>
+    <!-- FILL: ẩn dụ khung (tòa nhà/thẻ ra vào, bưu điện…) kể qua nhân vật cụ thể. Ẩn dụ này dùng nhất quán cả trang. -->
+  </div>
+</section>
+
+<!-- ════════ 1. CÓ GÌ THAY ĐỔI (cả hai) ════════ -->
+<section>
+  <h2><span class="num">1</span> Có gì thay đổi — Trước vs Sau <span class="audience aud-both">PO + QC</span></h2>
+  <table>
+    <tr><th style="width:24%"></th><th style="width:38%">Trước</th><th>Sau</th></tr>
+    <!-- FILL: 3-5 hàng khác biệt lớn nhất, mỗi ô 1-2 câu đời thường -->
+    <tr><td><b>…</b></td><td>…</td><td>…</td></tr>
+  </table>
+
+  <!-- OPTIONAL: nếu có công thức quyền/điều kiện nhiều vế → vẽ phép tính bằng chips thay vì viết công thức -->
+  <h3>Công thức … — minh họa bằng ví dụ</h3>
+  <div class="calc">
+    <div class="step"><div class="t">① …</div><span class="chip ch-on">…</span></div>
+    <div class="op">∩</div>
+    <div class="step"><div class="t">② …</div><span class="chip ch-on">…</span><span class="chip ch-na">… (không áp dụng)</span></div>
+    <div class="op">−</div>
+    <div class="step"><div class="t">③ …</div><span class="chip ch-off">…</span></div>
+    <div class="op">=</div>
+    <div class="step result"><div class="t">✅ Kết quả</div><span class="chip ch-on">…</span></div>
+  </div>
+  <p style="font-size:12.5px; color:var(--text-muted)"><!-- FILL: 1 câu "quy tắc vàng" --></p>
+</section>
+
+<!-- ════════ 2. VÌ SAO CẦN (PO) ════════ -->
+<section>
+  <h2><span class="num">2</span> Vì sao cần <span class="audience aud-po">PO</span></h2>
+  <ul class="tight">
+    <!-- FILL: 2-3 gạch đầu dòng business: bối cảnh, giá trị, rủi ro nếu không làm -->
+    <li><b>…</b> …</li>
+  </ul>
+</section>
+
+<!-- ════════ 3. LUỒNG HOẠT ĐỘNG (cả hai) ════════ -->
+<section>
+  <h2><span class="num">3</span> Luồng hoạt động <span class="audience aud-both">PO + QC</span></h2>
+
+  <h3>3a. Nhìn theo nghiệp vụ (cho PO)</h3>
+  <p><!-- FILL: 1 câu dẫn: luồng đi qua mấy chốt, sai ở đâu thì sao --></p>
+  <div class="mermaid">
+flowchart LR
+  %% FILL: swimlane kể chuyện nhân vật. Subgraph = lane. KHÔNG thuật ngữ.
+  %% Pattern: nhân vật hỏi → hệ thống nhận diện + phát thẻ → chốt kiểm soát → ✅ / ⛔
+  subgraph U["👤 Nhân vật"]
+    A1["…"]
+  end
+  subgraph B["Hệ thống"]
+    B1["…"]
+  end
+  subgraph R["Kết quả"]
+    R1["✅ …"]
+    R2["⛔ …"]
+  end
+  A1 --> B1 --> R1
+  B1 -. "sai" .-> R2
+  </div>
+
+  <h3>3b. Sequence diagram kỹ thuật (cho QC)</h3>
+  <div class="mermaid">
+sequenceDiagram
+  autonumber
+  %% FILL: giữ chi tiết kỹ thuật (token, check, log, mã lỗi) nhưng label dễ đọc.
+  %% Dùng alt/else cho nhánh thành công vs từ chối. Ghi rõ hành vi kết thúc (vd [DONE]).
+  participant A as …
+  participant B as …
+  A->>B: …
+  alt sai / không hợp lệ
+    B-->>A: từ chối + ghi log
+  else hợp lệ
+    B-->>A: …
+  end
+  </div>
+</section>
+
+<!-- ════════ 4. TIÊU CHÍ NGHIỆM THU (QC) ════════ -->
+<section>
+  <h2><span class="num">4</span> Tiêu chí nghiệm thu (kèm ví dụ) <span class="audience aud-qc">QC</span></h2>
+  <!-- FILL: 5-8 AC. Phủ: happy path, từ chối khi sai, ranh giới quyền, thu hồi/thay đổi, lỗi giữa chừng, cách ly dữ liệu.
+       Mỗi AC: tên ngắn gọn + Nếu/Khi/Thì + 1 dòng 💡 ví dụ cụ thể (nhân vật, thời gian, số liệu). -->
+  <div class="ac"><span class="acid">AC-1 · Tên ngắn</span><br>
+    <b class="g">Nếu</b> … · <b class="g">Khi</b> … · <b class="g">Thì</b> …
+    <div class="exline">💡 Ví dụ: …</div>
+  </div>
+</section>
+
+<!-- ════════ 5. KẾT QUẢ TEST (cả hai) — XÓA nếu chưa test, hoặc ghi rõ "chưa test" ════════ -->
+<section>
+  <h2><span class="num">5</span> Kết quả test <span class="audience aud-both">PO + QC</span></h2>
+  <div class="verdict">
+    <!-- FILL: số liệu THẬT từ test plan — không bịa -->
+    <div class="vcard v-pass"><div class="big">…</div><div class="lbl">ĐẠT / … case</div></div>
+    <div class="vcard v-skip"><div class="big">…</div><div class="lbl">CHƯA TEST (lý do mục 6)</div></div>
+    <div class="vcard v-fail"><div class="big">…</div><div class="lbl">LỖI</div></div>
+  </div>
+  <div class="callout co-green"><b>Kết luận: …</b> — <!-- FILL: verdict + test trên môi trường nào (thật/giả lập) --></div>
+  <!-- OPTIONAL: bug tìm được nhờ test = giá trị, nêu bằng ngôn ngữ hậu quả người dùng -->
+  <div class="callout co-blue"><b>Giá trị thêm từ đợt test:</b> …</div>
+  <p class="links">Chi tiết: <a href="test_plan_….html">test plan</a> · <a href="proposal.html">thiết kế kỹ thuật</a> · <a href="implementation_status.html">tiến độ code</a></p>
+</section>
+
+<!-- ════════ 6. NGOÀI PHẠM VI & VIỆC CÒN LẠI (cả hai) — XÓA nếu không có ════════ -->
+<section>
+  <h2><span class="num">6</span> Ngoài phạm vi &amp; việc còn lại <span class="audience aud-both">PO + QC</span></h2>
+
+  <h3>Không nằm trong đợt này (chủ đích, làm sau)</h3>
+  <ul class="tight"><li>…</li></ul>
+
+  <h3>Case chưa test — lý do (1 dòng/nhóm)</h3>
+  <ul class="tight"><li><b>… case</b> vì …</li></ul>
+
+  <h3>✅ Checklist trước khi bật tính năng</h3>
+  <ul class="tight"><li>…</li></ul>
+</section>
+
+</main>
+
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({ startOnLoad: true, theme: 'neutral', flowchart: { htmlLabels: true } });
+</script>
+</body>
+</html>

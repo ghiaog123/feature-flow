@@ -31,6 +31,12 @@ Chẩn đoán vấn đề, CHƯA bàn giải pháp. Ghi ra `docs/features/<featu
 - **Insight riêng Codex**: <...>
 - **Cùng hướng khác độ sâu**: <...>
 
+## Blindspots / Ẩn số chưa đóng
+Ẩn số nổi lên từ Blindspot Pass (Bước 2) — cái Claude CHƯA kiểm, giả định đang dựa vào — + trạng thái sau debate.
+| Ẩn số / giả định chưa kiểm | Độ tin cậy (Cao/TB/Thấp) | Cách đóng (đọc file / hỏi ai / test gì) | Trạng thái (đã đóng / còn mở) |
+|---|---|---|---|
+| | | | |
+
 ## Bất đồng còn lại (nếu stalemate)
 | Điểm | Claude | Codex | Khuyến nghị nghiêng bên nào |
 |---|---|---|---|

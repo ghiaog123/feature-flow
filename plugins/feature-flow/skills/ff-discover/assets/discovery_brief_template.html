@@ -1,0 +1,371 @@
+<!doctype html>
+<html lang="{{LANG}}">
+<head>
+<meta charset="utf-8" />
+<title>{{FEATURE}} — discovery brief</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #FAFAF9;
+    --surface: #FFFFFF;
+    --surface-2: #F8FAFC;
+    --border: #E2E8F0;
+    --border-strong: #CBD5E1;
+    --text: #0F172A;
+    --text-muted: #64748B;
+    --text-soft: #475569;
+
+    --accent: #2563EB;
+    --accent-bg: #EFF6FF;
+    --success: #16A34A;
+    --success-bg: #F0FDF4;
+    --warn: #D97706;
+    --warn-bg: #FFFBEB;
+    --danger: #DC2626;
+    --danger-bg: #FEF2F2;
+    --violet: #7C3AED;
+    --violet-bg: #F5F3FF;
+
+    --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04);
+    --shadow: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.65;
+    font-size: 15px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  .wrap { max-width: 1000px; margin: 0 auto; padding: 40px 24px 96px; }
+
+  /* ── Header + đếm nhanh + mục lục ─────────────────────────── */
+  header.page { margin-bottom: 22px; }
+  h1 { font-size: 30px; line-height: 1.15; margin: 0 0 10px; font-weight: 700; letter-spacing: -0.02em; }
+  .sub { color: var(--text-muted); font-size: 14px; }
+
+  .glance { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0 4px; }
+  .stat {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 999px; padding: 5px 13px; font-size: 13px; font-weight: 500;
+    box-shadow: var(--shadow-sm);
+  }
+  .stat b { font-weight: 700; }
+  .stat.hot b { color: var(--danger); }
+
+  .toc { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
+  .toc a {
+    font-size: 12.5px; color: var(--text-soft); background: var(--surface-2);
+    border: 1px solid var(--border); border-radius: 999px; padding: 3px 11px;
+  }
+  .toc a:hover { border-color: var(--accent); color: var(--accent); text-decoration: none; }
+
+  /* ── Nhãn của một "tầng đọc" ──────────────────────────────── */
+  .band-label {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--text-muted); margin: 30px 0 12px;
+  }
+  .band-label::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+  .band-label .hint { font-weight: 500; text-transform: none; letter-spacing: 0; color: var(--text-muted); opacity: .8; }
+
+  /* ── Section ──────────────────────────────────────────────── */
+  section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 22px 26px;
+    margin-bottom: 14px;
+    box-shadow: var(--shadow-sm);
+    scroll-margin-top: 20px;
+  }
+  section h2 { font-size: 18px; margin: 0 0 6px; color: var(--text); font-weight: 600; letter-spacing: -0.01em; }
+  section h2 .h2-hint { font-size: 13px; font-weight: 400; color: var(--text-muted); letter-spacing: 0; }
+  section > p:first-of-type { margin-top: 10px; }
+
+  /* Ngôi sao: khối Ẩn số nổi bật hơn hẳn */
+  section.hero { border: 1px solid var(--accent); box-shadow: 0 2px 10px rgba(37,99,235,0.08); }
+  section.hero h2 { color: var(--accent); }
+
+  .mini-label { font-size: 12px; color: var(--text-muted); font-weight: 600; margin: 16px 0 6px; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  thead th {
+    text-align: left; padding: 9px 12px; color: var(--text-soft); font-weight: 600;
+    font-size: 13px; background: var(--surface-2); border-bottom: 1px solid var(--border);
+  }
+  tbody td { padding: 11px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tbody tr:last-child td { border-bottom: 0; }
+
+  code, pre { font-family: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 13px; }
+  code { background: var(--surface-2); padding: 1.5px 6px; border-radius: 4px; border: 1px solid var(--border); color: var(--text); }
+  pre { background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px 16px; overflow-x: auto; line-height: 1.55; }
+  pre code { background: transparent; border: 0; padding: 0; }
+
+  ul, ol { margin: 6px 0; padding-left: 22px; }
+  li { font-size: 14px; margin-bottom: 6px; }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+  .grid.cols-4 { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 16px 18px; }
+  .card.pros { border-top: 3px solid var(--success); }
+  .card.cons { border-top: 3px solid var(--warn); }
+  .card.alt  { border-top: 3px solid var(--text-muted); }
+
+  /* Ẩn số — màu = MỨC ƯU TIÊN XEM (khớp trực giác):
+     🔴 pri-hi = xem trước tiên · 🟡 pri-mid = kế tiếp · 🟢 pri-lo = để sau / phỏng đoán */
+  .card.pri-hi  { border-left: 4px solid var(--danger);  background: linear-gradient(90deg, var(--danger-bg) 0%, var(--surface) 60%); }
+  .card.pri-mid { border-left: 4px solid var(--warn); }
+  .card.pri-lo  { border-left: 4px solid var(--success); }
+  .card h3 { margin: 0 0 10px; font-size: 13.5px; font-weight: 600; color: var(--text-soft); }
+  .card ul { margin: 0; padding-left: 18px; }
+  .card li { font-size: 14px; color: var(--text); }
+  .card .u-title { font-size: 15px; font-weight: 600; color: var(--text); margin: 8px 0 8px; }
+  .card .u-meta { font-size: 13.5px; color: var(--text-soft); margin: 5px 0 0; }
+  .card .u-meta b { color: var(--text); font-weight: 600; }
+
+  /* Legend màu ưu tiên — đặt ngay đầu khối Ẩn số cho khỏi đoán */
+  .legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 12.5px; color: var(--text-soft); margin: 4px 0 14px; }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+
+  .tag { display: inline-flex; align-items: center; gap: 5px; padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; line-height: 1.7; border: 1px solid transparent; }
+  .t-add  { background: var(--success-bg); color: var(--success); border-color: rgba(22, 163, 74, 0.2); }
+  .t-mod  { background: var(--accent-bg);  color: var(--accent);  border-color: rgba(37, 99, 235, 0.2); }
+  .t-warn { background: var(--warn-bg);    color: var(--warn);    border-color: rgba(217, 119, 6, 0.2); }
+  .t-del  { background: var(--danger-bg);  color: var(--danger);  border-color: rgba(220, 38, 38, 0.2); }
+
+  .ts-scope { display:inline-block; font-size: 11px; font-weight: 600; padding: 1px 7px; border-radius: 4px; margin-left: 4px; }
+  .ts-symptom { background: var(--warn-bg); color: var(--warn); }
+  .ts-root { background: var(--success-bg); color: var(--success); }
+
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  /* Phần phụ gấp được — mặc định đóng, không chiếm chỗ khi rỗng */
+  details.fold { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-sm); margin-bottom: 14px; overflow: hidden; }
+  details.fold > summary { cursor: pointer; list-style: none; padding: 18px 26px; font-size: 18px; font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 10px; }
+  details.fold > summary::-webkit-details-marker { display: none; }
+  details.fold > summary::before { content: "▸"; color: var(--text-muted); font-size: 14px; transition: transform .15s; }
+  details.fold[open] > summary::before { transform: rotate(90deg); }
+  details.fold > summary .h2-hint { font-size: 13px; font-weight: 400; color: var(--text-muted); }
+  details.fold .fold-body { padding: 0 26px 22px; }
+
+  @media (max-width: 640px) {
+    .wrap { padding: 28px 18px 72px; }
+    h1 { font-size: 24px; }
+    section, details.fold > summary, details.fold .fold-body { padding-left: 18px; padding-right: 18px; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
+  /* Mermaid diagram — bản đồ vùng + coupling ngầm */
+  .diagram { background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 18px; margin: 10px 0; overflow-x: auto; text-align: center; }
+  .diagram .mermaid { font-family: "IBM Plex Sans", sans-serif; }
+  .diagram-cap { color: var(--text-muted); font-size: 12px; margin-top: 6px; }
+
+  /* TL;DR — vấn đề THẬT bằng ngôn ngữ thường, đọc 10 giây hiểu được */
+  .tldr { background: var(--accent-bg); border: 1px solid var(--border); border-left: 4px solid var(--accent); border-radius: var(--radius); padding: 18px 22px; margin-bottom: 14px; }
+  .tldr h3 { margin: 0 0 8px; font-size: 13px; font-weight: 700; color: var(--accent); letter-spacing: 0.03em; }
+  .tldr p { margin: 0 0 8px; font-size: 15.5px; line-height: 1.6; color: var(--text); }
+  .tldr p:last-child { margin-bottom: 0; }
+
+  /* Banner "chưa quyết" — nhắc đây là discovery, không phải quyết định */
+  .lane-note { font-size: 13px; color: var(--text-muted); background: var(--surface-2); border: 1px dashed var(--border-strong); border-radius: var(--radius-sm); padding: 9px 13px; margin: 12px 0 0; }
+</style>
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({
+    startOnLoad: true,
+    securityLevel: 'loose',
+    theme: 'base',
+    themeVariables: {
+      fontFamily: '"IBM Plex Sans", sans-serif',
+      primaryColor: '#EFF6FF',
+      primaryBorderColor: '#2563EB',
+      primaryTextColor: '#0F172A',
+      lineColor: '#64748B',
+      secondaryColor: '#F5F3FF',
+      tertiaryColor: '#F0FDF4',
+    },
+  });
+</script>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="page">
+    <h1>{{FEATURE}}</h1>
+    <div class="sub">Discovery Brief · cửa vào (ff-discover) · Vùng: {{AREA}} · {{DATE}}</div>
+
+    <!-- Đếm nhanh: cho người đọc biết "có gì bên trong" trước khi cuộn.
+         Cập nhật số cho khớp nội dung thật. .hot = có ẩn số ưu tiên cao. -->
+    <div class="glance">
+      <span class="stat hot"><b>0</b> ẩn số · <b>0</b> ưu tiên cao</span>
+      <span class="stat">🗺️ <b>0</b> điểm coupling ngầm</span>
+      <span class="stat">📖 đọc ~<b>0</b> phút</span>
+    </div>
+
+    <!-- Mục lục nhảy nhanh -->
+    <nav class="toc">
+      <a href="#tldr">Vấn đề thật</a>
+      <a href="#scope">Ý định &amp; phạm vi</a>
+      <a href="#map">Bản đồ</a>
+      <a href="#unknowns">Ẩn số</a>
+      <a href="#directions">Hướng đi</a>
+      <a href="#next">Bước tiếp</a>
+    </nav>
+  </header>
+
+  <!-- ═══════════════ TẦNG 1 · HIỂU NHANH (đọc 30 giây) ═══════════════ -->
+  <div class="band-label">Hiểu nhanh <span class="hint">— đọc 30 giây là nắm được</span></div>
+
+  <div class="tldr" id="tldr">
+    <h3>Vấn đề thật</h3>
+    <!-- 1–2 câu ngôn ngữ thường, KHÔNG jargon: cảm giác mơ hồ của user thực chất là gì.
+         vd: "auth mong manh" → thực chất refresh dùng chung state trong bộ nhớ với auth, restart là mất. -->
+    <p></p>
+  </div>
+
+  <section id="scope">
+    <h2>Vấn đề &amp; phạm vi <span class="h2-hint">— ta đang giải gì, và KHÔNG giải gì</span></h2>
+    <!-- 1 câu sắc "cái cần hiểu/quyết", rồi 1 đoạn: đau gì, trigger nào, ai chịu ảnh hưởng. Không dùng từ mờ. -->
+    <p></p>
+
+    <div class="mini-label">Tín hiệu thành công (đo được)</div>
+    <ul>
+      <!-- <li>p95 latency endpoint X &lt; 200ms</li> -->
+    </ul>
+
+    <div class="grid" style="margin-top:14px;">
+      <div class="card pros"><h3>✅ Trong phạm vi</h3><ul><!-- --></ul></div>
+      <div class="card alt"><h3>🚫 Không làm lần này</h3><ul><!-- chặn scope creep --></ul></div>
+    </div>
+    <p class="lane-note">Đây là discovery — chưa chẩn đoán nguyên nhân, chưa chọn giải pháp. Chốt đó là việc của <code>ff-problem-solver</code> / <code>ff-planning</code>.</p>
+  </section>
+
+  <!-- ═══════════════ TẦNG 2 · BỨC TRANH (muốn đào sâu thì đọc) ═══════════════ -->
+  <div class="band-label">Bức tranh <span class="hint">— cấu trúc &amp; ngôn ngữ chung</span></div>
+
+  <section id="map">
+    <h2>Bản đồ vùng &amp; coupling ngầm</h2>
+    <!-- Vẽ vùng code + phụ thuộc. Coupling NGẦM/RỦI RO = mũi tên nét đứt đỏ.
+         3 lớp tín hiệu: màu theo vai trò · hình theo loại · icon đầu label. ≤7 node; nhiều hơn → tách. -->
+    <div class="diagram">
+      <pre class="mermaid">
+flowchart LR
+    A[/🔑 auth.py/] -- "TOKEN_TTL=900" --> A2[(🗄️ _SESSIONS<br/>in-process)]
+    B[/♻️ refresh.py/] -. "import _SESSIONS (ngầm)" .-> A2
+    B -. "900 copy lại (drift)" .-> B2{{⚠️ TTL trùng lặp}}
+
+    classDef proc  fill:#F5F3FF,stroke:#7C3AED,color:#0F172A,stroke-width:2px;
+    classDef data  fill:#F8FAFC,stroke:#64748B,color:#0F172A,stroke-width:2px;
+    classDef risk  fill:#FEF2F2,stroke:#DC2626,color:#0F172A,stroke-width:2px;
+    class A,B proc;
+    class A2 data;
+    class B2 risk;
+    linkStyle 1,2 stroke:#DC2626,stroke-width:2px;
+      </pre>
+      <div class="diagram-cap">🟣 module · ⚪ store · 🔴 nét đứt = coupling ngầm/rủi ro chưa hiển nhiên</div>
+    </div>
+    <!-- 1–2 câu "đọc bản đồ giúp": đường nét đứt đỏ nghĩa là gì với người đọc. -->
+    <p class="u-meta"></p>
+  </section>
+
+  <details class="fold">
+    <summary>Từ vựng đã neo <span class="h2-hint">— từ mờ → nghĩa đo được (mở nếu cần tra)</span></summary>
+    <div class="fold-body">
+      <table>
+        <thead><tr><th style="width:24%;">Từ mờ</th><th>Nghĩa đo được</th><th style="width:26%;">Nguồn (code/domain)</th></tr></thead>
+        <tbody>
+          <!-- <tr><td>"nhanh"</td><td>p95 endpoint X &lt; 200ms</td><td><code>api.py:12</code></td></tr> -->
+        </tbody>
+      </table>
+    </div>
+  </details>
+
+  <!-- ═══════════════ TẦNG 3 · ẨN SỐ & BƯỚC TIẾP (phần quan trọng nhất) ═══════════════ -->
+  <div class="band-label">Ẩn số &amp; bước tiếp <span class="hint">— sản phẩm chính của brief</span></div>
+
+  <section class="hero" id="unknowns">
+    <h2>Ẩn số — cái ta chưa chắc</h2>
+    <!-- SẢN PHẨM CHÍNH. Màu = mức ưu tiên xem (khớp trực giác đỏ=gấp), KHÔNG phải "độ tin cậy".
+         Mỗi card: tên ẩn số + điều đã thấy + tác động nếu bỏ qua + cách đóng. -->
+    <div class="legend">
+      <span><i style="background:var(--danger)"></i> 🔴 Xem trước tiên</span>
+      <span><i style="background:var(--warn)"></i> 🟡 Kế tiếp</span>
+      <span><i style="background:var(--success)"></i> 🟢 Để sau / phỏng đoán</span>
+    </div>
+    <div class="grid">
+      <!--
+      <div class="card pri-hi">
+        <span class="tag t-del">🔴 Xem trước</span>
+        <p class="u-title">U1 · Restart wipe _SESSIONS → mọi token chết</p>
+        <p class="u-meta"><b>Điều đã thấy:</b> comment tại <code>auth.py:8</code> tự thú "reset on restart".</p>
+        <p class="u-meta"><b>Tác động nếu bỏ qua:</b> hiểu nhầm "sửa TTL làm vỡ refresh".</p>
+        <p class="u-meta"><b>Cách đóng:</b> đọc <code>auth.py:9</code>; test restart giữ session?</p>
+      </div>
+      <div class="card pri-mid">
+        <span class="tag t-warn">🟡 Kế tiếp</span>
+        <p class="u-title">U2 · TTL 900 trùng lặp giữa 2 file → drift</p>
+        <p class="u-meta"><b>Điều đã thấy:</b> ...</p>
+        <p class="u-meta"><b>Tác động nếu bỏ qua:</b> ...</p>
+        <p class="u-meta"><b>Cách đóng:</b> ...</p>
+      </div>
+      <div class="card pri-lo">
+        <span class="tag t-add">🟢 Để sau</span>
+        <p class="u-title">U3 · Token sha256(user:sec) có thể trùng/đoán</p>
+        <p class="u-meta"><b>Điều đã thấy:</b> ...</p>
+        <p class="u-meta"><b>Tác động nếu bỏ qua:</b> ...</p>
+        <p class="u-meta"><b>Cách đóng:</b> ...</p>
+      </div>
+      -->
+    </div>
+  </section>
+
+  <section id="directions">
+    <h2>Hướng can thiệp <span class="h2-hint">— để chốt tham vọng, CHƯA chọn hướng</span></h2>
+    <p class="lane-note">Liệt kê để chốt <b>phạm vi/tham vọng</b> lần này, KHÔNG để chọn hướng. Chọn là việc downstream.</p>
+    <div class="grid cols-4" style="margin-top:12px;">
+      <div class="card"><h3>⚡ Ngay / trong ngày</h3><ul><!-- vá triệu chứng --></ul><span class="ts-scope ts-symptom">triệu chứng</span></div>
+      <div class="card"><h3>📅 Ngắn (ngày–tuần)</h3><ul><!-- --></ul></div>
+      <div class="card"><h3>🗓️ Trung (tuần–tháng)</h3><ul><!-- --></ul></div>
+      <div class="card"><h3>🏗️ Dài (quý)</h3><ul><!-- đổi kiến trúc --></ul><span class="ts-scope ts-root">gốc rễ</span></div>
+    </div>
+    <p class="u-meta" style="margin-top:12px;"><b>Tầng scope user chốt lần này:</b> <!-- ngay / ngắn / trung / dài — hoặc "giả định, chờ xác nhận" --></p>
+    <!-- Nếu là feature mới (không phải sửa đau): thay bảng timescale bằng Trong phạm vi / Sau này / Không làm. -->
+  </section>
+
+  <section id="next">
+    <h2>Bước tiếp — skill kế tiếp</h2>
+    <!-- ff-problem-solver nếu còn cần chẩn đoán/quyết · ff-planning nếu hướng đã rõ -->
+    <p><b>Đề xuất:</b> <span class="tag t-mod"></span></p>
+    <p class="u-meta"><b>Vì sao:</b> </p>
+    <p class="u-meta">Mang brief này làm phát biểu vấn đề + bản đồ ẩn số cho stage sau.</p>
+  </section>
+
+  <!-- Phụ lục tùy chọn — chỉ giữ nếu có port từ prior art, nếu không thì XOÁ cả khối này. -->
+  <details class="fold">
+    <summary>Tham chiếu &amp; gotchas <span class="h2-hint">— nếu có port từ prior art</span></summary>
+    <div class="fold-body">
+      <table>
+        <thead><tr><th>Khía cạnh</th><th>Tham chiếu</th><th>Stack đích</th><th>Gotcha / khác biệt ngữ nghĩa</th></tr></thead>
+        <tbody>
+          <!-- Bỏ cả details này nếu không port từ đâu -->
+        </tbody>
+      </table>
+    </div>
+  </details>
+
+</div>
+</body>
+</html>

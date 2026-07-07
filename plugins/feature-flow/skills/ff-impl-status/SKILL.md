@@ -83,11 +83,16 @@ Proposal chốt design intent — sai giả định ở đây sẽ lan xuống s
 
 Đừng hỏi cho đủ số — hỏi đúng chỗ còn mơ hồ. Nếu mọi thứ đã rõ tới mức không nghĩ ra được 3 câu đáng hỏi, vẫn phải hỏi ≥3: chuyển sang xác nhận giả định ("Tôi đang hiểu X, đúng không?", "Scope có bao gồm Y không?", "Có ràng buộc Z nào không?").
 
-**Ưu tiên hỏi** những thứ làm proposal đi sai hướng nếu đoán nhầm: scope (làm gì / không làm gì), data model + nguồn dữ liệu, hành vi edge case, ràng buộc tương thích ngược / migration, ai là consumer của API.
+**Hỏi theo thứ tự tác động kiến trúc — nặng & khó đảo ngược HỎI TRƯỚC.** Trả lời sai một câu impact cao đầu độc mọi thứ phía sau, nên phải lộ ra sớm nhất. Sắp câu hỏi theo thứ tự:
+1. **Impact cao, khó sửa về sau** — data model, chọn storage, ràng buộc tương thích ngược / migration, ai là consumer của API.
+2. **Impact vừa** — scope (làm gì / không làm gì), nguồn dữ liệu, hành vi edge case.
+3. **Impact thấp / dễ đổi** — chi tiết cosmetic, đặt sau cùng.
 
 **Ngữ cảnh session trước là LOW TRUST.** Có thể tái dùng để *gợi ý* câu trả lời, nhưng không coi là chốt. Nếu yêu cầu hiện tại **mâu thuẫn** với điều đã nói trước đó trong session (vd: trước nói dùng Postgres, giờ ngầm định Mongo) → **phải hỏi lại để giải quyết mâu thuẫn**, nêu rõ hai phía conflict, đừng tự chọn.
 
 Dùng tool hỏi nhiều lựa chọn (AskUserQuestion) khi câu hỏi có phương án rời rạc; hỏi open-ended khi cần mô tả tự do. Sau khi user trả lời, mới sinh proposal. Nếu câu trả lời lại mở ra mơ hồ mới đáng kể, hỏi thêm 1 vòng ngắn — đừng kéo dài vô hạn.
+
+**Sau khi user trả lời → chốt thành bảng quyết định.** Tổng hợp câu trả lời thành một **bảng quyết định** gọn (`Câu hỏi/Quyết định | Chốt | Lý do`). Bảng này là **input chuẩn** để dựng proposal — proposal KHÔNG được dựng trên giả định chưa ghi lại. Mọi giả định không tầm thường phải truy về được một dòng trong bảng. Bảng feed thẳng vào đầu proposal (section 1–2): chèn vào box "Quyết định từ interview" gần TL;DR / Scope (có sẵn trong `assets/proposal_template.html`).
 
 #### 1b — Sinh proposal
 

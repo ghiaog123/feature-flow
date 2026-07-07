@@ -62,6 +62,8 @@ Trước khi gọi Codex, Claude tự đọc code để hiểu địa hình. **C
 
 Từ bản đồ đó, Claude phác **cách hiện thực sơ bộ** của riêng mình: các bước, thứ tự, file mỗi bước đụng, rủi ro, phần cần thử nghiệm. Đây phải xong và là lập trường độc lập của Claude TRƯỚC Bước 2.
 
+**Nếu hiện thực này port/phỏng theo một tham chiếu** (ngôn ngữ khác, thư viện, repo khác, prior art) → thêm một lượt **phân tích tham chiếu** trước khi phác bước: đọc code tham chiếu thật, trích **đoạn khớp** (cái gì map 1:1), **khác biệt ngữ nghĩa** (API/kiểu/hành vi lệch), và **gotchas platform-/stack-specific** không mang qua nguyên vẹn (concurrency model, quản lý bộ nhớ, timezone/locale, lỗi ngầm định, thứ tự khởi tạo...). Ghi lại để plan KHÔNG mặc định hành vi tham chiếu tự chuyển sang stack đích. Kết quả đổ vào mục **"Tham chiếu & gotchas"** của plan (Bước 3). Không có tham chiếu để port → bỏ qua bước này.
+
 **Kiểm fidelity ngay tại đây**: nếu deep-dive cho thấy giải pháp đã chốt trong brief **mâu thuẫn với code thật / không khả thi** → DỪNG, nêu rõ vì sao, báo ngược về `ff-problem-solver`. Không âm thầm đổi giải pháp rồi lập plan cho cái khác.
 
 ### Bước 2 — Debate CÁCH hiện thực: invoke /codex-think-about
@@ -86,12 +88,15 @@ Tổng hợp kết quả debate thành plan **hành động được**, ghi `doc
 | **Mục tiêu / Outcomes** | Cái gì được coi là xong (nguồn để derive acceptance criteria) |
 | **Bối cảnh & quyết định** | Tóm tắt quyết định + lý do (link `analysis_brief.md` / decision record nếu có) |
 | **Vùng tác động** | Bảng file:line sẽ đụng + vai trò |
-| **Các bước hiện thực** | Đánh số, mỗi bước khai: làm gì, **Owns files** (file nó sở hữu), **Depends on** (bước phụ thuộc), song song được không |
+| **Tham chiếu & gotchas** *(nếu có port)* | Đoạn code khớp, khác biệt ngữ nghĩa, gotchas platform-/stack-specific — chỉ khi hiện thực phỏng theo một tham chiếu (từ lượt phân tích tham chiếu ở Bước 1) |
+| **Các bước hiện thực** | Đánh số, mỗi bước khai: làm gì, **Owns files** (file nó sở hữu), **Depends on** (bước phụ thuộc), song song được không, **Độ bất định (uncertainty)** (cao/trung/thấp — quyết định càng dễ phải sửa lại càng cao) |
 | **Test & verify** | Cách kiểm chứng từng phần + tiêu chí pass |
 | **Rủi ro & rollback** | Điều dễ vỡ + cách lùi |
 | **Ngoài phạm vi** | Chủ đích không làm lần này |
 
 **Dependency contract** (`Owns files` / `Depends on` cho mỗi bước) là hợp đồng để `ff-implement` parallelize an toàn: bước có file disjoint + không phụ thuộc → chạy song song; còn lại tuần tự. Khai **honest** — nghi thì để tuần tự.
+
+**Tweakable-first (Độ bất định)** phủ **LÊN TRÊN** dependency contract, không thay nó: mỗi bước gắn thêm cờ độ bất định (cao/trung/thấp). Quyết định **dễ phải sửa lại nhất** — chọn kiến trúc, hình dạng schema, giả định chưa kiểm chứng — phải nêu **trước và to nhất** để review nhắm vào đó **khi đổi còn rẻ**; việc cơ học/chắc chắn gom lại hoặc đẩy về sau. Lưu ý: cờ bất định chỉ định **thứ tự chú ý / ưu tiên review**, còn `Depends on` mới là cái quyết định **thứ tự chạy / parallelize** thật — đừng lẫn hai trục.
 
 Nếu project cần plan dạng JSON theo `.claude/schemas/plan-schema.json` (xem `.claude/docs/plan-execution-guide.md`) → sinh kèm; nhưng bản `.md` là bản để `/codex-plan-review` review. Giữ heading rõ ràng (`#`/`##`) — `/codex-plan-review` cần cấu trúc heading để bám.
 
@@ -134,6 +139,8 @@ Cái gì chưa vào plan file → gắn cờ must-keep.
 - ❌ Lập plan khi quyết định chưa chốt (đáng lẽ chạy `ff-problem-solver` trước).
 - ❌ Nuốt nguyên file vào main khi phạm vi lớn (nên tỏa sub-agent trả report gọn); hoặc tỏa sub-agent cho việc nhỏ đã biết chỗ (over-engineer).
 - ❌ Khai "song song được" bừa khi file chồng nhau/có phụ thuộc → executor vỡ. Nghi thì tuần tự.
+- ❌ Xếp plan thuần theo dependency rồi chôn quyết định kiến trúc rủi ro nhất ở giữa → phát hiện sai lúc sửa đã đắt. Nêu phần bất định cao lên trước và to nhất.
+- ❌ Port từ tham chiếu rồi mặc định hành vi tự chuyển sang stack đích, không ghi gotchas / khác biệt ngữ nghĩa.
 - ❌ Viết plan văn xuôi không bước đánh số / không file touchpoint / không dependency contract → không review được, không parallelize được.
 - ❌ Để Codex sửa code project (chỉ được sửa file plan, và do Claude sửa).
 - ❌ Tự viết giao thức gọi codex thay vì delegate hai skill có sẵn.

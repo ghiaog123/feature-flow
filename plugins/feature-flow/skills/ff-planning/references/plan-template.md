@@ -22,16 +22,23 @@ docs/features/<feature>/analysis_brief.md · docs/decisions/...>
 | `path/to/file.py:120` | <sửa gì> |
 | `path/to/other.py` | <thêm gì> |
 
+## Tham chiếu & gotchas
+<Chỉ khi hiện thực port/phỏng theo một tham chiếu (ngôn ngữ/thư viện/repo/prior art khác). Bỏ mục này nếu không có tham chiếu.>
+| Khía cạnh | Tham chiếu | Stack đích | Gotcha / khác biệt |
+|---|---|---|---|
+| <hành vi/API> | <đoạn khớp / cách tham chiếu làm> | <cách stack này làm> | <chỗ KHÔNG chuyển 1:1: concurrency, bộ nhớ, timezone/locale, lỗi ngầm, thứ tự init...> |
+
 ## Các bước hiện thực
 > `Owns files` = file bước này sở hữu (được sửa). `Depends on` = bước phải xong trước.
 > Song song an toàn ⟺ Owns files disjoint VÀ không phụ thuộc lẫn nhau.
+> `Độ bất định` = cao/trung/thấp — bước dễ phải sửa lại nhất (kiến trúc, schema, giả định chưa kiểm chứng) để **cao**. Cờ này chỉ xếp **ưu tiên chú ý/review** (tweakable-first), KHÔNG đổi thứ tự chạy — thứ tự chạy vẫn theo `Depends on`. Nêu bước bất định cao lên đầu / cho nổi bật.
 
-| # | Bước | Owns files | Depends on | Song song? |
-|---|---|---|---|---|
-| 0 | <contract-first: khóa type/signature/stub chung nếu có seam> | `path/shared.py` (types, stubs) | — | — |
-| 1 | <làm gì cụ thể> | `path/a.py` | 0 | với 2 |
-| 2 | <...> | `path/b.py` | 0 | với 1 |
-| 3 | <bước gom/integration> | `path/wire.py` | 1, 2 | — |
+| # | Bước | Owns files | Depends on | Song song? | Độ bất định |
+|---|---|---|---|---|---|
+| 0 | <contract-first: khóa type/signature/stub chung nếu có seam> | `path/shared.py` (types, stubs) | — | — | cao |
+| 1 | <làm gì cụ thể> | `path/a.py` | 0 | với 2 | trung |
+| 2 | <...> | `path/b.py` | 0 | với 1 | thấp |
+| 3 | <bước gom/integration> | `path/wire.py` | 1, 2 | — | thấp |
 
 ## Test & verify
 | Phần | Cách kiểm chứng | Tiêu chí pass |

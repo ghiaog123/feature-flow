@@ -1,46 +1,46 @@
 # Decision Record — template
 
-Lưu khi user muốn truy vết quyết định về sau. Đường dẫn gợi ý: `docs/decisions/<slug>-<YYYY-MM-DD>.md`.
+Save when the user wants to trace the decision later. Suggested path: `docs/decisions/<slug>-<YYYY-MM-DD>.md`.
 
 ```markdown
-# <Phát biểu vấn đề một câu>
+# <One-sentence problem statement>
 
-- **Ngày**: <YYYY-MM-DD>
-- **Trạng thái**: Quyết định | Stalemate (cần user chốt)
-- **Người tham gia**: Claude Code ⇄ Codex (+ user nếu có)
+- **Date**: <YYYY-MM-DD>
+- **Status**: Decided | Stalemate (user must decide)
+- **Participants**: Claude Code ⇄ Codex (+ user if involved)
 
-## Bối cảnh
-<Vì sao phải quyết. Ràng buộc, tiêu chí thành công.>
+## Context
+<Why a decision was needed. Constraints, success criteria.>
 
-## Các phương án đã cân nhắc
-| Phương án | Ưu | Nhược | Hợp khi |
+## Options considered
+| Option | Pros | Cons | Fits when |
 |---|---|---|---|
 | A | | | |
 | B | | | |
 
-## Quyết định
-<Chọn gì. Dứt khoát.>
+## Decision
+<What was chosen. Decisive.>
 
-## Lý do
-- <lý do 1>
-- <lý do 2>
+## Rationale
+- <reason 1>
+- <reason 2>
 
-## Đánh đổi đã chấp nhận
-- <hy sinh gì>
+## Accepted trade-offs
+- <what is sacrificed>
 
-## Bất đồng còn lại (nếu có)
-| Điểm | Claude | Codex | Khuyến nghị |
+## Remaining disagreements (if any)
+| Point | Claude | Codex | Recommendation |
 |---|---|---|---|
 
-## Bước tiếp theo
-- [ ] <hành động>
+## Next steps
+- [ ] <action>
 
-## Rủi ro / cần kiểm chứng
-- <rủi ro> → kiểm bằng <cách>
+## Risks / needs verification
+- <risk> → verify via <method>
 
-## Nguồn
-- <link + ngày truy cập>
+## Sources
+- <link + access date>
 
-## Độ tin cậy
-<Cao | Trung bình | Thấp> — <vì sao>
+## Confidence
+<High | Medium | Low> — <why>
 ```

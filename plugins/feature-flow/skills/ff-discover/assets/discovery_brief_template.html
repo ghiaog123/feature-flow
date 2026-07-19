@@ -48,7 +48,7 @@
   }
   .wrap { max-width: 1000px; margin: 0 auto; padding: 40px 24px 96px; }
 
-  /* ── Header + đếm nhanh + mục lục ─────────────────────────── */
+  /* ── Header + at-a-glance counters + table of contents ─────── */
   header.page { margin-bottom: 22px; }
   h1 { font-size: 30px; line-height: 1.15; margin: 0 0 10px; font-weight: 700; letter-spacing: -0.02em; }
   .sub { color: var(--text-muted); font-size: 14px; }
@@ -70,7 +70,7 @@
   }
   .toc a:hover { border-color: var(--accent); color: var(--accent); text-decoration: none; }
 
-  /* ── Nhãn của một "tầng đọc" ──────────────────────────────── */
+  /* ── Label for a "reading tier" ───────────────────────────── */
   .band-label {
     display: flex; align-items: center; gap: 10px;
     font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
@@ -93,7 +93,7 @@
   section h2 .h2-hint { font-size: 13px; font-weight: 400; color: var(--text-muted); letter-spacing: 0; }
   section > p:first-of-type { margin-top: 10px; }
 
-  /* Ngôi sao: khối Ẩn số nổi bật hơn hẳn */
+  /* Star of the show: the Unknowns block stands out */
   section.hero { border: 1px solid var(--accent); box-shadow: 0 2px 10px rgba(37,99,235,0.08); }
   section.hero h2 { color: var(--accent); }
 
@@ -122,8 +122,8 @@
   .card.cons { border-top: 3px solid var(--warn); }
   .card.alt  { border-top: 3px solid var(--text-muted); }
 
-  /* Ẩn số — màu = MỨC ƯU TIÊN XEM (khớp trực giác):
-     🔴 pri-hi = xem trước tiên · 🟡 pri-mid = kế tiếp · 🟢 pri-lo = để sau / phỏng đoán */
+  /* Unknowns — color = REVIEW PRIORITY (matches intuition):
+     🔴 pri-hi = look first · 🟡 pri-mid = next · 🟢 pri-lo = later / speculative */
   .card.pri-hi  { border-left: 4px solid var(--danger);  background: linear-gradient(90deg, var(--danger-bg) 0%, var(--surface) 60%); }
   .card.pri-mid { border-left: 4px solid var(--warn); }
   .card.pri-lo  { border-left: 4px solid var(--success); }
@@ -134,7 +134,7 @@
   .card .u-meta { font-size: 13.5px; color: var(--text-soft); margin: 5px 0 0; }
   .card .u-meta b { color: var(--text); font-weight: 600; }
 
-  /* Legend màu ưu tiên — đặt ngay đầu khối Ẩn số cho khỏi đoán */
+  /* Priority-color legend — placed right at the top of the Unknowns block so nobody has to guess */
   .legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 12.5px; color: var(--text-soft); margin: 4px 0 14px; }
   .legend span { display: inline-flex; align-items: center; gap: 6px; }
   .legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
@@ -152,7 +152,7 @@
   a { color: var(--accent); text-decoration: none; }
   a:hover { text-decoration: underline; }
 
-  /* Phần phụ gấp được — mặc định đóng, không chiếm chỗ khi rỗng */
+  /* Collapsible auxiliary sections — closed by default, take no space when empty */
   details.fold { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-sm); margin-bottom: 14px; overflow: hidden; }
   details.fold > summary { cursor: pointer; list-style: none; padding: 18px 26px; font-size: 18px; font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 10px; }
   details.fold > summary::-webkit-details-marker { display: none; }
@@ -168,18 +168,18 @@
   }
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
 
-  /* Mermaid diagram — bản đồ vùng + coupling ngầm */
+  /* Mermaid diagram — area map + hidden coupling */
   .diagram { background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 18px; margin: 10px 0; overflow-x: auto; text-align: center; }
   .diagram .mermaid { font-family: "IBM Plex Sans", sans-serif; }
   .diagram-cap { color: var(--text-muted); font-size: 12px; margin-top: 6px; }
 
-  /* TL;DR — vấn đề THẬT bằng ngôn ngữ thường, đọc 10 giây hiểu được */
+  /* TL;DR — the REAL problem in plain language, understandable in a 10-second read */
   .tldr { background: var(--accent-bg); border: 1px solid var(--border); border-left: 4px solid var(--accent); border-radius: var(--radius); padding: 18px 22px; margin-bottom: 14px; }
   .tldr h3 { margin: 0 0 8px; font-size: 13px; font-weight: 700; color: var(--accent); letter-spacing: 0.03em; }
   .tldr p { margin: 0 0 8px; font-size: 15.5px; line-height: 1.6; color: var(--text); }
   .tldr p:last-child { margin-bottom: 0; }
 
-  /* Banner "chưa quyết" — nhắc đây là discovery, không phải quyết định */
+  /* "Not decided yet" banner — reminds the reader this is discovery, not a decision */
   .lane-note { font-size: 13px; color: var(--text-muted); background: var(--surface-2); border: 1px dashed var(--border-strong); border-radius: var(--radius-sm); padding: 9px 13px; margin: 12px 0 0; }
 </style>
 <script type="module">
@@ -205,67 +205,67 @@
 
   <header class="page">
     <h1>{{FEATURE}}</h1>
-    <div class="sub">Discovery Brief · cửa vào (ff-discover) · Vùng: {{AREA}} · {{DATE}}</div>
+    <div class="sub">Discovery Brief · front door (ff-discover) · Area: {{AREA}} · {{DATE}}</div>
 
-    <!-- Đếm nhanh: cho người đọc biết "có gì bên trong" trước khi cuộn.
-         Cập nhật số cho khớp nội dung thật. .hot = có ẩn số ưu tiên cao. -->
+    <!-- At-a-glance counters: tell the reader "what's inside" before they scroll.
+         Update the numbers to match the real content. .hot = has high-priority unknowns. -->
     <div class="glance">
-      <span class="stat hot"><b>0</b> ẩn số · <b>0</b> ưu tiên cao</span>
-      <span class="stat">🗺️ <b>0</b> điểm coupling ngầm</span>
-      <span class="stat">📖 đọc ~<b>0</b> phút</span>
+      <span class="stat hot"><b>0</b> unknowns · <b>0</b> high priority</span>
+      <span class="stat">🗺️ <b>0</b> hidden coupling points</span>
+      <span class="stat">📖 ~<b>0</b> min read</span>
     </div>
 
-    <!-- Mục lục nhảy nhanh -->
+    <!-- Quick-jump table of contents -->
     <nav class="toc">
-      <a href="#tldr">Vấn đề thật</a>
-      <a href="#scope">Ý định &amp; phạm vi</a>
-      <a href="#map">Bản đồ</a>
-      <a href="#unknowns">Ẩn số</a>
-      <a href="#directions">Hướng đi</a>
-      <a href="#next">Bước tiếp</a>
+      <a href="#tldr">Real problem</a>
+      <a href="#scope">Intent &amp; scope</a>
+      <a href="#map">Map</a>
+      <a href="#unknowns">Unknowns</a>
+      <a href="#directions">Directions</a>
+      <a href="#next">Next step</a>
     </nav>
   </header>
 
-  <!-- ═══════════════ TẦNG 1 · HIỂU NHANH (đọc 30 giây) ═══════════════ -->
-  <div class="band-label">Hiểu nhanh <span class="hint">— đọc 30 giây là nắm được</span></div>
+  <!-- ═══════════════ TIER 1 · QUICK GRASP (30-second read) ═══════════════ -->
+  <div class="band-label">Quick grasp <span class="hint">— 30 seconds is enough to get it</span></div>
 
   <div class="tldr" id="tldr">
-    <h3>Vấn đề thật</h3>
-    <!-- 1–2 câu ngôn ngữ thường, KHÔNG jargon: cảm giác mơ hồ của user thực chất là gì.
-         vd: "auth mong manh" → thực chất refresh dùng chung state trong bộ nhớ với auth, restart là mất. -->
+    <h3>The real problem</h3>
+    <!-- 1–2 plain-language sentences, NO jargon: what the user's vague feeling actually is.
+         e.g. "auth feels fragile" → refresh actually shares in-memory state with auth; a restart wipes it. -->
     <p></p>
   </div>
 
   <section id="scope">
-    <h2>Vấn đề &amp; phạm vi <span class="h2-hint">— ta đang giải gì, và KHÔNG giải gì</span></h2>
-    <!-- 1 câu sắc "cái cần hiểu/quyết", rồi 1 đoạn: đau gì, trigger nào, ai chịu ảnh hưởng. Không dùng từ mờ. -->
+    <h2>Problem &amp; scope <span class="h2-hint">— what we are solving, and what we are NOT</span></h2>
+    <!-- 1 sharp sentence stating "the thing to understand/decide", then 1 paragraph: what hurts, what trigger, who is affected. No vague words. -->
     <p></p>
 
-    <div class="mini-label">Tín hiệu thành công (đo được)</div>
+    <div class="mini-label">Success signals (measurable)</div>
     <ul>
-      <!-- <li>p95 latency endpoint X &lt; 200ms</li> -->
+      <!-- <li>p95 latency of endpoint X &lt; 200ms</li> -->
     </ul>
 
     <div class="grid" style="margin-top:14px;">
-      <div class="card pros"><h3>✅ Trong phạm vi</h3><ul><!-- --></ul></div>
-      <div class="card alt"><h3>🚫 Không làm lần này</h3><ul><!-- chặn scope creep --></ul></div>
+      <div class="card pros"><h3>✅ In scope</h3><ul><!-- --></ul></div>
+      <div class="card alt"><h3>🚫 Not this time</h3><ul><!-- blocks scope creep --></ul></div>
     </div>
-    <p class="lane-note">Đây là discovery — chưa chẩn đoán nguyên nhân, chưa chọn giải pháp. Chốt đó là việc của <code>ff-problem-solver</code> / <code>ff-planning</code>.</p>
+    <p class="lane-note">This is discovery — no root cause diagnosed yet, no solution chosen yet. Settling that is the job of <code>ff-problem-solver</code> / <code>ff-planning</code>.</p>
   </section>
 
-  <!-- ═══════════════ TẦNG 2 · BỨC TRANH (muốn đào sâu thì đọc) ═══════════════ -->
-  <div class="band-label">Bức tranh <span class="hint">— cấu trúc &amp; ngôn ngữ chung</span></div>
+  <!-- ═══════════════ TIER 2 · THE BIG PICTURE (read to dig deeper) ═══════════════ -->
+  <div class="band-label">The big picture <span class="hint">— structure &amp; shared vocabulary</span></div>
 
   <section id="map">
-    <h2>Bản đồ vùng &amp; coupling ngầm</h2>
-    <!-- Vẽ vùng code + phụ thuộc. Coupling NGẦM/RỦI RO = mũi tên nét đứt đỏ.
-         3 lớp tín hiệu: màu theo vai trò · hình theo loại · icon đầu label. ≤7 node; nhiều hơn → tách. -->
+    <h2>Area map &amp; hidden coupling</h2>
+    <!-- Draw the code area + dependencies. HIDDEN/RISKY coupling = red dashed arrows.
+         3 signal layers: color by role · shape by kind · icon at label start. ≤7 nodes; more → split. -->
     <div class="diagram">
       <pre class="mermaid">
 flowchart LR
     A[/🔑 auth.py/] -- "TOKEN_TTL=900" --> A2[(🗄️ _SESSIONS<br/>in-process)]
-    B[/♻️ refresh.py/] -. "import _SESSIONS (ngầm)" .-> A2
-    B -. "900 copy lại (drift)" .-> B2{{⚠️ TTL trùng lặp}}
+    B[/♻️ refresh.py/] -. "import _SESSIONS (hidden)" .-> A2
+    B -. "900 copied again (drift)" .-> B2{{⚠️ duplicated TTL}}
 
     classDef proc  fill:#F5F3FF,stroke:#7C3AED,color:#0F172A,stroke-width:2px;
     classDef data  fill:#F8FAFC,stroke:#64748B,color:#0F172A,stroke-width:2px;
@@ -275,92 +275,92 @@ flowchart LR
     class B2 risk;
     linkStyle 1,2 stroke:#DC2626,stroke-width:2px;
       </pre>
-      <div class="diagram-cap">🟣 module · ⚪ store · 🔴 nét đứt = coupling ngầm/rủi ro chưa hiển nhiên</div>
+      <div class="diagram-cap">🟣 module · ⚪ store · 🔴 dashed = hidden/risky coupling that is not obvious</div>
     </div>
-    <!-- 1–2 câu "đọc bản đồ giúp": đường nét đứt đỏ nghĩa là gì với người đọc. -->
+    <!-- 1–2 sentences of "map reading help": what the red dashed lines mean for the reader. -->
     <p class="u-meta"></p>
   </section>
 
   <details class="fold">
-    <summary>Từ vựng đã neo <span class="h2-hint">— từ mờ → nghĩa đo được (mở nếu cần tra)</span></summary>
+    <summary>Anchored vocabulary <span class="h2-hint">— vague word → measurable meaning (open if you need to look one up)</span></summary>
     <div class="fold-body">
       <table>
-        <thead><tr><th style="width:24%;">Từ mờ</th><th>Nghĩa đo được</th><th style="width:26%;">Nguồn (code/domain)</th></tr></thead>
+        <thead><tr><th style="width:24%;">Vague word</th><th>Measurable meaning</th><th style="width:26%;">Source (code/domain)</th></tr></thead>
         <tbody>
-          <!-- <tr><td>"nhanh"</td><td>p95 endpoint X &lt; 200ms</td><td><code>api.py:12</code></td></tr> -->
+          <!-- <tr><td>"fast"</td><td>p95 of endpoint X &lt; 200ms</td><td><code>api.py:12</code></td></tr> -->
         </tbody>
       </table>
     </div>
   </details>
 
-  <!-- ═══════════════ TẦNG 3 · ẨN SỐ & BƯỚC TIẾP (phần quan trọng nhất) ═══════════════ -->
-  <div class="band-label">Ẩn số &amp; bước tiếp <span class="hint">— sản phẩm chính của brief</span></div>
+  <!-- ═══════════════ TIER 3 · UNKNOWNS & NEXT STEPS (the most important part) ═══════════════ -->
+  <div class="band-label">Unknowns &amp; next steps <span class="hint">— the brief's main product</span></div>
 
   <section class="hero" id="unknowns">
-    <h2>Ẩn số — cái ta chưa chắc</h2>
-    <!-- SẢN PHẨM CHÍNH. Màu = mức ưu tiên xem (khớp trực giác đỏ=gấp), KHÔNG phải "độ tin cậy".
-         Mỗi card: tên ẩn số + điều đã thấy + tác động nếu bỏ qua + cách đóng. -->
+    <h2>Unknowns — what we are not sure about</h2>
+    <!-- THE MAIN PRODUCT. Color = review priority (matches the red=urgent intuition), NOT "confidence".
+         Each card: unknown name + what was seen + impact if ignored + how to close it. -->
     <div class="legend">
-      <span><i style="background:var(--danger)"></i> 🔴 Xem trước tiên</span>
-      <span><i style="background:var(--warn)"></i> 🟡 Kế tiếp</span>
-      <span><i style="background:var(--success)"></i> 🟢 Để sau / phỏng đoán</span>
+      <span><i style="background:var(--danger)"></i> 🔴 Look first</span>
+      <span><i style="background:var(--warn)"></i> 🟡 Next</span>
+      <span><i style="background:var(--success)"></i> 🟢 Later / speculative</span>
     </div>
     <div class="grid">
       <!--
       <div class="card pri-hi">
-        <span class="tag t-del">🔴 Xem trước</span>
-        <p class="u-title">U1 · Restart wipe _SESSIONS → mọi token chết</p>
-        <p class="u-meta"><b>Điều đã thấy:</b> comment tại <code>auth.py:8</code> tự thú "reset on restart".</p>
-        <p class="u-meta"><b>Tác động nếu bỏ qua:</b> hiểu nhầm "sửa TTL làm vỡ refresh".</p>
-        <p class="u-meta"><b>Cách đóng:</b> đọc <code>auth.py:9</code>; test restart giữ session?</p>
+        <span class="tag t-del">🔴 Look first</span>
+        <p class="u-title">U1 · Restart wipes _SESSIONS → every token dies</p>
+        <p class="u-meta"><b>What was seen:</b> comment at <code>auth.py:8</code> self-confesses "reset on restart".</p>
+        <p class="u-meta"><b>Impact if ignored:</b> misreading it as "changing TTL broke refresh".</p>
+        <p class="u-meta"><b>How to close:</b> read <code>auth.py:9</code>; test whether restart keeps sessions?</p>
       </div>
       <div class="card pri-mid">
-        <span class="tag t-warn">🟡 Kế tiếp</span>
-        <p class="u-title">U2 · TTL 900 trùng lặp giữa 2 file → drift</p>
-        <p class="u-meta"><b>Điều đã thấy:</b> ...</p>
-        <p class="u-meta"><b>Tác động nếu bỏ qua:</b> ...</p>
-        <p class="u-meta"><b>Cách đóng:</b> ...</p>
+        <span class="tag t-warn">🟡 Next</span>
+        <p class="u-title">U2 · TTL 900 duplicated across 2 files → drift</p>
+        <p class="u-meta"><b>What was seen:</b> ...</p>
+        <p class="u-meta"><b>Impact if ignored:</b> ...</p>
+        <p class="u-meta"><b>How to close:</b> ...</p>
       </div>
       <div class="card pri-lo">
-        <span class="tag t-add">🟢 Để sau</span>
-        <p class="u-title">U3 · Token sha256(user:sec) có thể trùng/đoán</p>
-        <p class="u-meta"><b>Điều đã thấy:</b> ...</p>
-        <p class="u-meta"><b>Tác động nếu bỏ qua:</b> ...</p>
-        <p class="u-meta"><b>Cách đóng:</b> ...</p>
+        <span class="tag t-add">🟢 Later</span>
+        <p class="u-title">U3 · Token sha256(user:sec) may collide / be guessable</p>
+        <p class="u-meta"><b>What was seen:</b> ...</p>
+        <p class="u-meta"><b>Impact if ignored:</b> ...</p>
+        <p class="u-meta"><b>How to close:</b> ...</p>
       </div>
       -->
     </div>
   </section>
 
   <section id="directions">
-    <h2>Hướng can thiệp <span class="h2-hint">— để chốt tham vọng, CHƯA chọn hướng</span></h2>
-    <p class="lane-note">Liệt kê để chốt <b>phạm vi/tham vọng</b> lần này, KHÔNG để chọn hướng. Chọn là việc downstream.</p>
+    <h2>Intervention directions <span class="h2-hint">— to settle ambition, NOT to pick a direction</span></h2>
+    <p class="lane-note">Listed to settle the <b>scope/ambition</b> of this round, NOT to pick a direction. Choosing is downstream work.</p>
     <div class="grid cols-4" style="margin-top:12px;">
-      <div class="card"><h3>⚡ Ngay / trong ngày</h3><ul><!-- vá triệu chứng --></ul><span class="ts-scope ts-symptom">triệu chứng</span></div>
-      <div class="card"><h3>📅 Ngắn (ngày–tuần)</h3><ul><!-- --></ul></div>
-      <div class="card"><h3>🗓️ Trung (tuần–tháng)</h3><ul><!-- --></ul></div>
-      <div class="card"><h3>🏗️ Dài (quý)</h3><ul><!-- đổi kiến trúc --></ul><span class="ts-scope ts-root">gốc rễ</span></div>
+      <div class="card"><h3>⚡ Now / same day</h3><ul><!-- patch the symptom --></ul><span class="ts-scope ts-symptom">symptom</span></div>
+      <div class="card"><h3>📅 Short (days–weeks)</h3><ul><!-- --></ul></div>
+      <div class="card"><h3>🗓️ Medium (weeks–months)</h3><ul><!-- --></ul></div>
+      <div class="card"><h3>🏗️ Long (quarter)</h3><ul><!-- architecture change --></ul><span class="ts-scope ts-root">root cause</span></div>
     </div>
-    <p class="u-meta" style="margin-top:12px;"><b>Tầng scope user chốt lần này:</b> <!-- ngay / ngắn / trung / dài — hoặc "giả định, chờ xác nhận" --></p>
-    <!-- Nếu là feature mới (không phải sửa đau): thay bảng timescale bằng Trong phạm vi / Sau này / Không làm. -->
+    <p class="u-meta" style="margin-top:12px;"><b>Scope tier the user settled on this time:</b> <!-- now / short / medium / long — or "assumed, pending confirmation" --></p>
+    <!-- If this is a new feature (not fixing a pain): replace the timescale table with In scope / Later / Won't do. -->
   </section>
 
   <section id="next">
-    <h2>Bước tiếp — skill kế tiếp</h2>
-    <!-- ff-problem-solver nếu còn cần chẩn đoán/quyết · ff-planning nếu hướng đã rõ -->
-    <p><b>Đề xuất:</b> <span class="tag t-mod"></span></p>
-    <p class="u-meta"><b>Vì sao:</b> </p>
-    <p class="u-meta">Mang brief này làm phát biểu vấn đề + bản đồ ẩn số cho stage sau.</p>
+    <h2>Next step — next skill</h2>
+    <!-- ff-problem-solver if diagnosis/decision is still needed · ff-planning if the direction is already clear -->
+    <p><b>Recommendation:</b> <span class="tag t-mod"></span></p>
+    <p class="u-meta"><b>Why:</b> </p>
+    <p class="u-meta">Carry this brief forward as the problem statement + unknowns map for the next stage.</p>
   </section>
 
-  <!-- Phụ lục tùy chọn — chỉ giữ nếu có port từ prior art, nếu không thì XOÁ cả khối này. -->
+  <!-- Optional appendix — keep only if porting from prior art, otherwise DELETE this whole block. -->
   <details class="fold">
-    <summary>Tham chiếu &amp; gotchas <span class="h2-hint">— nếu có port từ prior art</span></summary>
+    <summary>References &amp; gotchas <span class="h2-hint">— if porting from prior art</span></summary>
     <div class="fold-body">
       <table>
-        <thead><tr><th>Khía cạnh</th><th>Tham chiếu</th><th>Stack đích</th><th>Gotcha / khác biệt ngữ nghĩa</th></tr></thead>
+        <thead><tr><th>Aspect</th><th>Reference</th><th>Target stack</th><th>Gotcha / semantic difference</th></tr></thead>
         <tbody>
-          <!-- Bỏ cả details này nếu không port từ đâu -->
+          <!-- Remove this whole details block if nothing is being ported -->
         </tbody>
       </table>
     </div>

@@ -1,29 +1,29 @@
 ---
 name: ff-feature-brief
-description: Tạo "Feature Brief" — 1 trang HTML phi kỹ thuật giúp PO/QC hiểu feature mới (thay đổi gì, vì sao, luồng hoạt động, tiêu chí nghiệm thu, kết quả test, gaps). Tổng hợp từ docs/features/<feature>/ (proposal.html, test_plan_*.html, implementation_status.html) khi có, đọc code hoặc hỏi user khi thiếu. Dịch khái niệm kỹ thuật sang ẩn dụ đời thường (JWT → "thẻ thông hành") kèm ví dụ nhân vật cụ thể. Dùng skill này khi user nói "feature brief", "tạo brief", "one-pager", "tài liệu cho PO/QC xem", "tóm tắt feature cho PO", "doc bàn giao QC", "giải thích feature cho người không kỹ thuật", "trình bày feature dễ hiểu", "doc demo feature cho stakeholder" — kể cả khi không nói rõ chữ "brief". KHÔNG dùng cho: test plan chi tiết (ff-test-case-writer), tracking tiến độ code (ff-impl-status), API docs (ff-api-contract-writer).
+description: Create a "Feature Brief" — a 1-page non-technical HTML doc that helps PO/QC understand a new feature (what changed, why, how it flows, acceptance criteria, test results, gaps). Synthesizes from docs/features/<feature>/ (proposal.html, test_plan_*.html, implementation_status.html) when available, reads code or asks the user when sources are missing. Translates technical concepts into everyday metaphors (JWT → "a signed access pass") with concrete character-based examples. Use this skill when the user says "feature brief", "one-pager", "a doc for PO/QC to read", "summarize the feature for the PO", "QC handover doc", "explain the feature to non-technical people", "present the feature in plain language", "feature demo doc for stakeholders" — even without explicitly saying the word "brief". Do NOT use for: detailed test plans (ff-test-case-writer), code progress tracking (ff-impl-status), API docs (ff-api-contract-writer).
 ---
 
 # Feature Brief
 
-Sinh **1 trang HTML** tóm tắt feature cho **PO** (hiểu nghiệp vụ, quyết định) và **QC** (biết test gì). Nguyên tắc cốt lõi: người đọc **không phải dev** — mọi khái niệm kỹ thuật phải dịch sang ngôn ngữ đời thường, mỗi quy tắc trừu tượng phải có ví dụ mô phỏng cụ thể.
+Generate **1 HTML page** summarizing a feature for the **PO** (understand the business, decide) and **QC** (know what to test). Core principle: the reader is **not a dev** — every technical concept must be translated into everyday language, and every abstract rule must come with a concrete simulated example.
 
 ```
-docs/features/<feature>/          (đọc cái nào có)
+docs/features/<feature>/          (read whichever exist)
 ├── proposal.html             → What changed, Why, Flow, AC
-├── test_plan_*.html          → Test status, lý do SKIP
-├── implementation_status.html → trạng thái code, việc còn lại
-└── feature_brief.html        ← OUTPUT của skill này
+├── test_plan_*.html          → Test status, SKIP reasons
+├── implementation_status.html → code status, remaining work
+└── feature_brief.html        ← OUTPUT of this skill
 ```
 
 ## Workflow
 
-### Bước 1 — Xác định feature + gom nguồn
+### Step 1 — Identify the feature + gather sources
 
-1. User nêu tên feature → tìm `docs/features/<feature>/`. Nhiều folder ứng viên → hỏi.
-2. Glob các nguồn: `proposal.html`, `test_plan_*.html`, `implementation_status.html`, `implementation_plan.md`.
-3. **Linh hoạt, không chặn:** thiếu nguồn nào thì bù bằng cách đọc code liên quan hoặc hỏi user 2-3 câu. Thiếu test plan → mục Test status ghi rõ "chưa test" (không bịa số liệu).
+1. User names the feature → look for `docs/features/<feature>/`. Multiple candidate folders → ask.
+2. Glob the sources: `proposal.html`, `test_plan_*.html`, `implementation_status.html`, `implementation_plan.md`.
+3. **Flexible, non-blocking:** for any missing source, compensate by reading the relevant code or asking the user 2-3 questions. Missing test plan → the Test status section explicitly says "not tested yet" (don't fabricate numbers).
 
-Extract text từ HTML nguồn (file thường rất dài, đừng Read nguyên file):
+Extract text from the source HTML (files are usually very long, don't Read the whole file):
 
 ```bash
 python3 -c "
@@ -35,69 +35,69 @@ print(chr(10).join(l.strip() for l in html.unescape(text).split('\n') if l.strip
 "
 ```
 
-Test plan của ff-test-case-writer/ff-service-test-runner có sẵn box tóm tắt (headline PASS/SKIP/FAIL + lý do SKIP) — ưu tiên lấy từ đó.
+Test plans from ff-test-case-writer/ff-service-test-runner have a built-in summary box (PASS/SKIP/FAIL headline + SKIP reasons) — prefer pulling from that.
 
-### Bước 2 — Chưng cất nội dung
+### Step 2 — Distill the content
 
-Từ nguồn, rút ra (đây là **dữ kiện thật**, không suy diễn):
+From the sources, extract (these are **real facts**, not inferences):
 
-| Cần | Lấy từ |
+| Needed | Source |
 |---|---|
-| Before/after (3-5 khác biệt lớn nhất) | proposal mục kiến trúc/mục tiêu |
-| Lý do business (2-3 gạch đầu dòng) | proposal mục tiêu + hỏi user nếu mơ hồ |
-| Luồng chính + các nhánh từ chối/lỗi | proposal luồng chi tiết / sequence diagrams |
-| Hành vi nghiệm thu được (→ AC) | proposal expect + test plan P0 cases |
-| Số liệu test + lý do chưa test | test plan box tóm tắt |
-| Việc còn lại trước release | implementation_status / test plan |
+| Before/after (3-5 biggest differences) | proposal architecture/goals section |
+| Business rationale (2-3 bullets) | proposal goals + ask the user if unclear |
+| Main flow + rejection/error branches | proposal detailed flows / sequence diagrams |
+| Acceptable behaviors (→ AC) | proposal expects + test plan P0 cases |
+| Test numbers + reasons not yet tested | test plan summary box |
+| Remaining work before release | implementation_status / test plan |
 
-### Bước 3 — Dịch sang ngôn ngữ phi kỹ thuật
+### Step 3 — Translate into non-technical language
 
-**Ngôn ngữ output theo ngôn ngữ user dùng** (user chat tiếng Việt → brief tiếng Việt). Giọng văn: như giải thích cho đồng nghiệp phòng kinh doanh.
+**Output in English by default; follow the user's language if they ask.** Tone: like explaining to a colleague from the sales department.
 
-Quy tắc dịch — đây là phần quyết định chất lượng brief:
+Translation rules — this is what determines the brief's quality:
 
-1. **Mỗi khái niệm kỹ thuật → 1 ẩn dụ đời thường, dùng nhất quán cả trang.** Chọn 1 ẩn dụ khung (tòa nhà/thẻ ra vào, bưu điện, siêu thị…) rồi map mọi thứ vào đó. Ví dụ đã dùng tốt:
-   - JWT/token → "thẻ thông hành có chữ ký"
-   - service nội bộ → "kho công cụ", "chốt kiểm soát"
-   - fail-closed → "thẻ giả = không mở được tầng nào"
-   - intersection quyền → "vừa nằm trong bộ được giao, vừa được app thuê"
-   - cache invalidation → "có hiệu lực ngay, không đợi 5 phút"
-2. **Đặt nhân vật cụ thể** (vd "chị An dùng app Meeting Note") và kể mọi ví dụ qua nhân vật đó — người đọc nhớ câu chuyện, không nhớ thuật ngữ.
-3. **Mỗi AC kèm 1 dòng `💡 Ví dụ:`** mô phỏng tình huống thật với thời gian/số liệu cụ thể ("10h00 admin gỡ quyền → 10h00 chị An hỏi lại → AI từ chối ngay").
-4. **Quy tắc trừu tượng → hình vẽ phép tính.** Công thức quyền/điều kiện nhiều vế: vẽ thành dãy ô chips (① cái này ∩ ② cái kia − ③ trừ cái này = ✅ kết quả) thay vì viết công thức.
-5. Tên kỹ thuật thật (endpoint, bảng DB, tên class) chỉ xuất hiện trong phần dành cho QC (sequence diagram, code ref) — phần PO tuyệt đối không.
+1. **Each technical concept → 1 everyday metaphor, used consistently across the whole page.** Pick 1 framing metaphor (building/access card, post office, supermarket…) and map everything onto it. Examples that have worked well:
+   - JWT/token → "a signed access pass"
+   - internal service → "the tool warehouse", "the checkpoint"
+   - fail-closed → "a fake card opens no floor at all"
+   - permission intersection → "both in the assigned set AND hired by the app"
+   - cache invalidation → "takes effect immediately, no 5-minute wait"
+2. **Cast a concrete character** (e.g. "An uses the Meeting Note app") and tell every example through that character — readers remember stories, not terminology.
+3. **Each AC comes with 1 `💡 Example:` line** simulating a real situation with concrete times/numbers ("10:00 admin revokes the permission → 10:00 An asks again → the AI refuses immediately").
+4. **Abstract rules → arithmetic-style diagram.** Multi-clause permission/condition formulas: draw as a row of chips (① this ∩ ② that − ③ minus this = ✅ result) instead of writing the formula.
+5. Real technical names (endpoints, DB tables, class names) only appear in the QC-facing parts (sequence diagram, code refs) — never in the PO parts.
 
-### Bước 4 — Sinh HTML
+### Step 4 — Generate the HTML
 
-Copy `assets/template.html` (cùng thư mục skill này) → `docs/features/<feature>/feature_brief.html`, điền nội dung. Template có sẵn CSS đầy đủ + Mermaid CDN; xem chú thích `<!-- FILL: ... -->` trong template cho từng vùng.
+Copy `assets/template.html` (in this skill's folder) → `docs/features/<feature>/feature_brief.html`, and fill it in. The template ships with full CSS + Mermaid CDN; see the `<!-- FILL: ... -->` comments in the template for each area.
 
-**Cấu trúc chuẩn 7 khối — linh hoạt bỏ khối không áp dụng** (feature chưa test → bỏ khối 5 hoặc ghi "chưa test"; không có gaps → bỏ khối 6):
+**Standard 7-block structure — flexibly drop blocks that don't apply** (feature not yet tested → drop block 5 or write "not tested yet"; no gaps → drop block 6):
 
-| # | Khối | Audience | Nội dung |
+| # | Block | Audience | Content |
 |---|---|---|---|
-| 0 | 📌 Tóm tắt 30 giây | Cả hai | 2-3 câu + box "Hình dung nhanh" bằng ẩn dụ khung |
-| 1 | Có gì thay đổi | Cả hai | Bảng trước/sau 3-5 dòng + hình vẽ phép tính nếu có công thức |
-| 2 | Vì sao cần | PO | 2-3 gạch đầu dòng business |
-| 3 | Luồng hoạt động | Cả hai | 2 diagram Mermaid: **3a swimlane kể chuyện nhân vật** (cho PO, không thuật ngữ) + **3b sequence diagram** (cho QC, label tiếng dễ đọc nhưng giữ chi tiết kỹ thuật: token, fail-closed, log) |
-| 4 | Tiêu chí nghiệm thu | QC | 5-8 AC dạng Nếu/Khi/Thì, mỗi cái 1 dòng 💡 ví dụ. Phủ: happy path, từ chối khi sai, ranh giới quyền, thu hồi, lỗi giữa chừng |
-| 5 | Kết quả test | Cả hai | 3 card số (ĐẠT/CHƯA TEST/LỖI) + verdict + bug tìm được nhờ test (giá trị!) + link test plan |
-| 6 | Ngoài phạm vi & việc còn lại | Cả hai | Chủ đích làm sau / lý do case chưa test (1 dòng/nhóm) / checklist trước khi bật |
+| 0 | 📌 30-second summary | Both | 2-3 sentences + a "quick mental picture" box using the framing metaphor |
+| 1 | What changed | Both | 3-5 row before/after table + arithmetic diagram if there's a formula |
+| 2 | Why it's needed | PO | 2-3 business bullets |
+| 3 | How it flows | Both | 2 Mermaid diagrams: **3a character-story swimlane** (for PO, no jargon) + **3b sequence diagram** (for QC, readable labels but keeping technical detail: token, fail-closed, log) |
+| 4 | Acceptance criteria | QC | 5-8 If/When/Then ACs, each with a 1-line 💡 example. Cover: happy path, rejection on invalid input, permission boundaries, revocation, mid-flow failures |
+| 5 | Test results | Both | 3 number cards (PASS/NOT TESTED/FAIL) + verdict + bugs found through testing (that's the value!) + link to the test plan |
+| 6 | Out of scope & remaining work | Both | Deliberately deferred items / reasons cases aren't tested yet (1 line/group) / pre-launch checklist |
 
-Mỗi khối gắn badge audience (`PO` / `QC` / `PO + QC`) — người đọc lướt đúng phần mình.
+Each block carries an audience badge (`PO` / `QC` / `PO + QC`) — readers skim straight to their part.
 
-**Diagram:** Mermaid qua CDN (`mermaid@10` esm) — cần internet khi mở file; chấp nhận được với mạng công ty. Label node bằng ngôn ngữ user, swimlane PO kể đúng 1 câu chuyện của nhân vật (input câu hỏi thật → các chốt → ✅/⛔).
+**Diagrams:** Mermaid via CDN (`mermaid@10` esm) — needs internet when the file is opened; acceptable on a corporate network. Node labels in the user's language; the PO swimlane tells exactly 1 story of the character (real question input → the checkpoints → ✅/⛔).
 
-### Bước 5 — Kiểm tra + bàn giao
+### Step 5 — Verify + hand over
 
-1. Mọi con số (PASS/FAIL, số case) phải truy được về nguồn — **không bịa, không làm tròn đẹp**. Nguồn không có → ghi "chưa có dữ liệu".
-2. Link tương đối tới docs nguồn ở khối Test status (`test_plan_*.html`, `proposal.html`, `implementation_status.html`).
-3. `open <file>` cho user xem, hỏi cần chỉnh gì.
-4. Nhắc nếu `docs/` bị gitignore: file chỉ local — gửi trực tiếp hoặc đưa lên Confluence/wiki.
+1. Every number (PASS/FAIL, case counts) must be traceable to a source — **no fabrication, no pretty rounding**. Source missing → write "no data yet".
+2. Relative links to the source docs in the Test status block (`test_plan_*.html`, `proposal.html`, `implementation_status.html`).
+3. `open <file>` for the user to review, ask what needs adjusting.
+4. Remind the user if `docs/` is gitignored: the file is local-only — send it directly or put it on Confluence/wiki.
 
 ## Anti-patterns
 
-- ❌ Bê nguyên đoạn proposal kỹ thuật vào phần PO ("backend ký RS256 JWT aud=mcp-server…")
-- ❌ AC không có ví dụ, hoặc ví dụ chung chung ("user làm gì đó sai → hệ thống từ chối")
-- ❌ Bịa số test / verdict khi không có test plan
-- ❌ Nhiều ẩn dụ lẫn lộn (vừa "thẻ ra vào" vừa "chìa khóa két" vừa "vé xem phim") — chọn 1 khung, theo đến cùng
-- ❌ Brief dài quá ~2 màn hình scroll/khối — đây là one-pager, chi tiết để link sang doc nguồn
+- ❌ Pasting a raw technical proposal paragraph into the PO section ("backend signs an RS256 JWT with aud=mcp-server…")
+- ❌ ACs with no example, or generic examples ("user does something wrong → system rejects")
+- ❌ Fabricating test numbers / a verdict when there's no test plan
+- ❌ Mixing multiple metaphors ("access card" plus "safe key" plus "movie ticket") — pick 1 frame and stick with it
+- ❌ Brief longer than ~2 scroll-screens/block — this is a one-pager; details link out to source docs

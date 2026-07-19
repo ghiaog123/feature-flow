@@ -1,192 +1,192 @@
 ---
 name: ff-impl-status
-description: "Sinh và duy trì file HTML trạng thái sống cho task implement tại `docs/features/<feature>/implementation_status.html`. CHỈ trigger khi user gọi rõ ràng: `/ff-impl-status`, `ff-impl-status`, 'dùng skill ff-impl-status', 'bật status file', 'maintain status file', 'theo dõi implementation status', hoặc 'resume ff-impl-status <feature>' / 'load status <feature>' / 'tiếp tục feature X' để load lại từ proposal + implementation_status.html đã có trong chat mới. KHÔNG tự động trigger ngay cả khi user yêu cầu implement feature lớn. Sau khi user kích hoạt, skill ở trạng thái active đến hết session hoặc khi user nói 'stop status file' / 'skip status'. File ghi tiến độ, decisions ngoài thiết kế, compromises, bugs trong khi code, file thay đổi và rollout checklist. Hỗ trợ sinh proposal.html trước nếu user yêu cầu thiết kế trước; implementation_status.html chỉ sinh khi user xác nhận bắt đầu implement. Cũng hỗ trợ resume context từ session trước bằng cách đọc lại 2 file HTML đó."
+description: "Generate and maintain a live HTML status file for implementation tasks at `docs/features/<feature>/implementation_status.html`. ONLY triggers when the user explicitly invokes it: `/ff-impl-status`, `ff-impl-status`, 'use the ff-impl-status skill', 'turn on the status file', 'maintain status file', 'track implementation status', or 'resume ff-impl-status <feature>' / 'load status <feature>' / 'resume feature X' to reload from an existing proposal + implementation_status.html in a new chat. Does NOT auto-trigger even when the user asks to implement a large feature. Once activated, the skill stays active until the session ends or the user says 'stop status file' / 'skip status'. The file records progress, off-design decisions, compromises, bugs found while coding, changed files, and a rollout checklist. Supports generating proposal.html first if the user wants a design phase; implementation_status.html is only created once the user confirms implementation starts. Also supports resuming context from a previous session by re-reading those 2 HTML files."
 ---
 
 # ff-impl-status — Live Implementation Status HTML
 
-Sinh + duy trì file HTML tracker khi user implement task đa bước. File là **artifact giao tiếp** — ghi quyết định, thoả hiệp, bugs để user đọc nhanh và challenge điểm không đồng ý.
+Generate + maintain an HTML tracker file while the user implements a multi-step task. The file is a **communication artifact** — it records decisions, compromises, and bugs so the user can skim quickly and challenge anything they disagree with.
 
-## Khi nào skill này áp dụng
+## When this skill applies
 
-**Chỉ trigger khi user kích hoạt rõ ràng**:
+**Only triggers on explicit user activation**:
 - `/ff-impl-status`
-- "dùng skill ff-impl-status", "bật ff-impl-status"
-- "bật status file", "maintain status file"
-- "theo dõi implementation status"
-- Hoặc user nhắc tới skill này theo cách tương đương
+- "use the ff-impl-status skill", "turn on ff-impl-status"
+- "turn on the status file", "maintain status file"
+- "track implementation status"
+- Or the user references this skill in an equivalent way
 
-**Không tự động trigger** ngay cả khi user yêu cầu implement feature lớn / refactor / migration. Đây là yêu cầu rõ ràng từ owner skill: skill này phải opt-in mỗi session.
+**Never auto-trigger**, even when the user asks to implement a large feature / refactor / migration. This is an explicit requirement from the skill owner: this skill must be opt-in every session.
 
-Sau khi user kích hoạt, skill **active đến hết session** (hoặc đến khi user pause). Mọi task implement tiếp theo trong session đều áp dụng workflow này — không cần user nhắc lại.
+Once activated, the skill stays **active until the session ends** (or until the user pauses it). Every subsequent implementation task in the session follows this workflow — no reminder needed.
 
-**Tạm dừng** (giữ file hiện có, không update tiếp): "stop status file", "skip status", "khỏi cần status", "đừng update status nữa". **Resume** khi user yêu cầu lại.
+**Pause** (keep the existing file, stop updating): "stop status file", "skip status", "no need for the status file", "stop updating the status". **Resume** when the user asks again.
 
-## Nguyên tắc
+## Principles
 
-**File HTML là live document, không phải log.** Ngắn gọn, organized. Update vì user cần biết — không update vì "đã làm xong bước 4".
+**The HTML file is a live document, not a log.** Concise, organized. Update because the user needs to know — not because "step 4 is done".
 
-**Ngôn ngữ theo user.** VI prompt → VI HTML. EN prompt → EN HTML.
+**Output in English by default.** Write the HTML in English unless the user asks for another language — then follow the user's language.
 
-**Source-of-truth là file HTML.** Đọc trước khi update để giữ liên tục. Không rewrite trừ khi cấu trúc thay đổi lớn.
+**The HTML file is the source of truth.** Read it before updating to preserve continuity. Don't rewrite unless the structure changes significantly.
 
 ## Workflow
 
-### Bước -1 — Resume từ chat trước (nếu user yêu cầu)
+### Step -1 — Resume from a previous chat (when the user asks)
 
-Khi user nói "resume ff-impl-status <feature>", "load status <feature>", "tiếp tục feature X", "đọc lại status file", "tiếp tục từ session trước":
+When the user says "resume ff-impl-status <feature>", "load status <feature>", "resume feature X", "re-read the status file", "continue from the previous session":
 
-1. **Locate folder.** Tìm `docs/features/<feature>/` trong working directory. Nếu user không nói rõ tên feature:
-   - List `docs/features/*/` (Bash hoặc Glob).
-   - Nếu có 1 folder → dùng luôn.
-   - Nhiều folder → hỏi user chọn (bullet list các tên feature).
-   - Không có folder → báo lỗi: "Không tìm thấy `docs/features/<feature>/`. Skill chưa từng chạy cho feature này — bật skill mới bằng `/ff-impl-status`."
+1. **Locate folder.** Find `docs/features/<feature>/` in the working directory. If the user didn't name the feature:
+   - List `docs/features/*/` (Bash or Glob).
+   - Exactly 1 folder → use it.
+   - Multiple folders → ask the user to choose (bullet list of feature names).
+   - No folder → report the error: "Could not find `docs/features/<feature>/`. The skill has never run for this feature — start fresh with `/ff-impl-status`."
 
-2. **Đọc file theo thứ tự**:
-   - `proposal.html` (nếu tồn tại) — hiểu design intent + decisions ban đầu.
-   - `implementation_status.html` (nếu tồn tại) — pickup tiến độ + decisions ngoài thiết kế + bugs đã catch + files đã đổi + rollout checklist.
-   - `README.md` (nếu tồn tại) — index/summary.
+2. **Read files in order**:
+   - `proposal.html` (if it exists) — understand the design intent + initial decisions.
+   - `implementation_status.html` (if it exists) — pick up progress + off-design decisions + bugs caught + files changed + rollout checklist.
+   - `README.md` (if it exists) — index/summary.
 
-3. **Reconstruct context.** Sau khi đọc, trình bày tóm tắt ngắn cho user (≤10 dòng):
-   - Tiến độ hiện tại (bước done / in_progress / todo).
-   - Decisions chính đã chốt.
-   - Bugs đã fix.
-   - Rollout step nào còn pending.
+3. **Reconstruct context.** After reading, present a short summary to the user (≤10 lines):
+   - Current progress (steps done / in_progress / todo).
+   - Key decisions made.
+   - Bugs fixed.
+   - Which rollout steps are still pending.
 
-4. **Verify still-valid.** Memory check: các file/path/symbol nhắc trong status có thể đã đổi giữa các session. Trước khi suggest tiếp tục bước nào, grep / read file thật để confirm. Nếu phát hiện skew (file đã rename/xoá) → cập nhật status file ngay (section mới "Drift detected" hoặc update entry liên quan).
+4. **Verify still-valid.** Memory check: files/paths/symbols mentioned in the status may have changed between sessions. Before suggesting which step to continue, grep / read the real files to confirm. If skew is detected (file renamed/deleted) → update the status file immediately (new "Drift detected" section or update the relevant entry).
 
-5. **Đợi user chỉ đạo** việc tiếp theo (resume implement bước nào, edit decision nào, finalize, vv). Không tự động code.
+5. **Wait for the user's direction** on what's next (resume which step, edit which decision, finalize, etc.). Don't auto-code.
 
-Sau bước này, skill chuyển sang chế độ active bình thường (Bước 3 — update khi có event).
+After this step, the skill switches to normal active mode (Step 3 — update on events).
 
-### Bước 0 — Xác định feature name
+### Step 0 — Determine the feature name
 
-Suy luận `snake_case` / `kebab-case` từ:
-1. Prompt user (vd: "thêm project_id" → `project_id`).
-2. Git branch (vd: `develop-feature-project_id` → `project_id`).
-3. Nội dung proposal nếu đã có.
+Infer `snake_case` / `kebab-case` from:
+1. The user prompt (e.g. "add project_id" → `project_id`).
+2. The git branch (e.g. `develop-feature-project_id` → `project_id`).
+3. The proposal content if one already exists.
 
-Không hỏi user trừ khi 3 nguồn đều rỗng/ambiguous.
+Don't ask the user unless all 3 sources are empty/ambiguous.
 
-### Bước 1 — Proposal (khi user yêu cầu thiết kế trước)
+### Step 1 — Proposal (when the user asks for a design phase first)
 
-Khi user nói "đánh giá giải pháp", "viết đề xuất", "thiết kế trước", "viết proposal HTML":
+When the user says "evaluate the solution options", "write a proposal", "design first", "write the proposal HTML":
 
-#### 1a — Hỏi lại để clear ý (BẮT BUỘC trước khi sinh proposal)
+#### 1a — Ask clarifying questions (MANDATORY before generating the proposal)
 
-Proposal chốt design intent — sai giả định ở đây sẽ lan xuống status file + code thật. Rẻ hơn nhiều nếu hỏi trước. Vì vậy **luôn** đặt **3–5 câu hỏi** làm rõ trước khi viết `proposal.html`.
+The proposal locks the design intent — a wrong assumption here propagates into the status file + real code. Asking first is far cheaper. So **always** ask **3–5 clarifying questions** before writing `proposal.html`.
 
-**Chọn số câu hỏi theo độ chi tiết user đã mô tả:**
-- Mô tả kỹ, rõ scope + data model + API + edge case → **3** câu (chỉ hỏi phần thật sự mơ hồ).
-- Mô tả trung bình → **4** câu.
-- Mô tả sơ sài / một câu / nhiều chỗ hổng → **5** câu.
+**Pick the number of questions based on how detailed the user's description is:**
+- Thorough description with clear scope + data model + API + edge cases → **3** questions (only what's genuinely ambiguous).
+- Medium description → **4** questions.
+- Sparse / one-liner / many gaps → **5** questions.
 
-Đừng hỏi cho đủ số — hỏi đúng chỗ còn mơ hồ. Nếu mọi thứ đã rõ tới mức không nghĩ ra được 3 câu đáng hỏi, vẫn phải hỏi ≥3: chuyển sang xác nhận giả định ("Tôi đang hiểu X, đúng không?", "Scope có bao gồm Y không?", "Có ràng buộc Z nào không?").
+Don't ask to fill a quota — ask where it's actually ambiguous. If everything is so clear you can't think of 3 worthwhile questions, still ask ≥3: switch to confirming assumptions ("I understand X — correct?", "Does the scope include Y?", "Any constraint Z?").
 
-**Hỏi theo thứ tự tác động kiến trúc — nặng & khó đảo ngược HỎI TRƯỚC.** Trả lời sai một câu impact cao đầu độc mọi thứ phía sau, nên phải lộ ra sớm nhất. Sắp câu hỏi theo thứ tự:
-1. **Impact cao, khó sửa về sau** — data model, chọn storage, ràng buộc tương thích ngược / migration, ai là consumer của API.
-2. **Impact vừa** — scope (làm gì / không làm gì), nguồn dữ liệu, hành vi edge case.
-3. **Impact thấp / dễ đổi** — chi tiết cosmetic, đặt sau cùng.
+**Order questions by architectural impact — heavy & hard-to-reverse FIRST.** A wrong answer to a high-impact question poisons everything downstream, so it must surface earliest. Order:
+1. **High impact, hard to fix later** — data model, storage choice, backward-compatibility / migration constraints, who consumes the API.
+2. **Medium impact** — scope (what's in / out), data sources, edge-case behavior.
+3. **Low impact / easy to change** — cosmetic details, last.
 
-**Ngữ cảnh session trước là LOW TRUST.** Có thể tái dùng để *gợi ý* câu trả lời, nhưng không coi là chốt. Nếu yêu cầu hiện tại **mâu thuẫn** với điều đã nói trước đó trong session (vd: trước nói dùng Postgres, giờ ngầm định Mongo) → **phải hỏi lại để giải quyết mâu thuẫn**, nêu rõ hai phía conflict, đừng tự chọn.
+**Previous-session context is LOW TRUST.** It may be reused to *suggest* answers, but is never final. If the current request **contradicts** something said earlier in the session (e.g. Postgres before, Mongo implied now) → **you must ask to resolve the conflict**, naming both sides; don't pick on your own.
 
-Dùng tool hỏi nhiều lựa chọn (AskUserQuestion) khi câu hỏi có phương án rời rạc; hỏi open-ended khi cần mô tả tự do. Sau khi user trả lời, mới sinh proposal. Nếu câu trả lời lại mở ra mơ hồ mới đáng kể, hỏi thêm 1 vòng ngắn — đừng kéo dài vô hạn.
+Use a multiple-choice tool (AskUserQuestion) when a question has discrete options; ask open-ended when free-form description is needed. Only generate the proposal after the user answers. If the answers open significant new ambiguity, ask one short follow-up round — don't drag it out indefinitely.
 
-**Sau khi user trả lời → chốt thành bảng quyết định.** Tổng hợp câu trả lời thành một **bảng quyết định** gọn (`Câu hỏi/Quyết định | Chốt | Lý do`). Bảng này là **input chuẩn** để dựng proposal — proposal KHÔNG được dựng trên giả định chưa ghi lại. Mọi giả định không tầm thường phải truy về được một dòng trong bảng. Bảng feed thẳng vào đầu proposal (section 1–2): chèn vào box "Quyết định từ interview" gần TL;DR / Scope (có sẵn trong `assets/proposal_template.html`).
+**After the user answers → lock into a decision table.** Synthesize the answers into a compact **decision table** (`Question/Decision | Settled | Rationale`). This table is the **canonical input** for building the proposal — the proposal must NOT be built on unrecorded assumptions. Every non-trivial assumption must trace back to a row in the table. The table feeds directly into the top of the proposal (sections 1–2): insert it into the "Decisions from interview" box near the TL;DR / Scope (available in `assets/proposal_template.html`).
 
-#### 1b — Sinh proposal
+#### 1b — Generate the proposal
 
-Sinh `docs/features/<feature>/proposal.html` với 8 section, theo thứ tự WHY → WHAT → HOW.
+Generate `docs/features/<feature>/proposal.html` with 8 sections, ordered WHY → WHAT → HOW.
 
-**Trước section 1 — box TL;DR "Ý tưởng core".** 1–3 câu ngôn ngữ thường, KHÔNG jargon: feature làm gì + giải quyết đau gì. User đọc 10 giây nắm được ý chính trước khi vào chi tiết kĩ thuật. Đây là phần quan trọng nhất cho người đọc không sâu kĩ thuật — viết rõ, cụ thể, tránh thuật ngữ. (Box `.tldr` có sẵn trong template.)
+**Before section 1 — a TL;DR box "Core idea".** 1–3 sentences in plain language, NO jargon: what the feature does + what pain it solves. The user should grasp the gist in 10 seconds before diving into technical detail. This is the most important part for less-technical readers — write clearly, concretely, avoid terminology. (The `.tldr` box is in the template.)
 
-1. **Bối cảnh & Vấn đề** — tại sao cần làm, đau ở đâu, trigger nào dẫn tới đề xuất (1–2 đoạn).
-2. **Mục tiêu & Scope** — mục tiêu (xong = gì) + In-scope / Non-goals.
-3. **Thay đổi data model** (table).
-4. **API surface** (table: method, path, mô tả).
-5. **Luồng chi tiết** cho API mới (numbered steps).
-6. **Tiêu chí nghiệm thu** — acceptance criteria kiểm chứng được; `ff-test-case-writer` + `ff-feature-brief` map thẳng từ đây.
-7. **Đánh giá** — Ưu / Rủi ro / Alternative đã loại.
-8. **Checklist triển khai** high-level.
+1. **Context & Problem** — why do this, where it hurts, what triggered the proposal (1–2 paragraphs).
+2. **Goals & Scope** — goals (done = what) + In-scope / Non-goals.
+3. **Data model changes** (table).
+4. **API surface** (table: method, path, description).
+5. **Detailed flows** for new APIs (numbered steps).
+6. **Acceptance criteria** — verifiable acceptance criteria; `ff-test-case-writer` + `ff-feature-brief` map directly from here.
+7. **Assessment** — Pros / Risks / Rejected alternatives.
+8. **High-level implementation checklist**.
 
-**Logic kĩ thuật → vẽ diagram ĐƠN GIẢN + NHIỀU MÀU cho dễ nhìn, không trình bày bằng text dài.** Template nhúng sẵn Mermaid.js (CDN, theme `base` + palette màu khớp). Dùng block `<pre class="mermaid">` trong `<div class="diagram">`:
-- **Luồng chi tiết (5)** → mặc định `flowchart` (box + mũi tên + nhánh `{điều kiện}`) — đơn giản, dễ nhìn. Chỉ dùng `sequenceDiagram` khi cần nhấn tương tác nhiều bên, `stateDiagram-v2` khi cần vòng đời trạng thái. Đừng vẽ phức tạp khi flowchart đủ.
-- **Data model (3)** → giữ table cột + `erDiagram` cho quan hệ giữa entity.
-- Chỉ giữ text cho phần diagram không tải nổi (rule validate cụ thể, lý do edge case). API surface (4) giữ table — tabular, không cần vẽ.
+**Technical logic → draw SIMPLE + COLORFUL diagrams for readability, don't present as long text.** The template embeds Mermaid.js (CDN, `base` theme + matching color palette). Use `<pre class="mermaid">` blocks inside `<div class="diagram">`:
+- **Detailed flows (5)** → default to `flowchart` (boxes + arrows + `{condition}` branches) — simple, readable. Use `sequenceDiagram` only when multi-party interaction matters, `stateDiagram-v2` when a state lifecycle matters. Don't over-draw when a flowchart suffices.
+- **Data model (3)** → keep the column table + `erDiagram` for entity relationships.
+- Keep text only for what diagrams can't carry (specific validation rules, edge-case rationale). API surface (4) stays a table — tabular, no drawing needed.
 
-**Làm diagram SINH ĐỘNG + dễ hiểu** — 3 lớp tín hiệu thị giác (mẫu đầy đủ trong template), user nhìn phát hiểu, không đọc chữ:
+**Make diagrams VIVID + easy to grasp** — 3 layers of visual signal (full example in the template), so the user understands at a glance without reading:
 
-1. **Màu theo vai trò** (`classDef` + `class`, `stroke-width:2px`): 🔵 xanh dương = đầu vào/start · 🟡 vàng = quyết định/điều kiện · 🟣 tím = xử lý/logic · ⚪ xám = data store · 🟢 xanh lá = thành công · 🔴 đỏ = lỗi/từ chối. Dùng đúng palette này, không chế thêm màu.
-2. **Hình khối theo loại node**: `([...])` stadium = điểm vào/ra (request, response) · `{...}` thoi = quyết định · `[/.../]` hình bình hành = bước xử lý · `[(...)]` trụ = DB/store. Hình khác nhau = vai trò khác nhau, nhận ra ngay.
-3. **Icon emoji đầu label** gợi nghĩa nhanh: 👤 client · ⚙️ xử lý · 🗄️ DB · ✅ thành công · ❌ lỗi · 🔑 auth · 📤 gửi · 📥 nhận. 1 icon/node, đừng spam.
+1. **Color by role** (`classDef` + `class`, `stroke-width:2px`): 🔵 blue = input/start · 🟡 yellow = decision/condition · 🟣 purple = processing/logic · ⚪ gray = data store · 🟢 green = success · 🔴 red = error/rejection. Use exactly this palette, don't invent colors.
+2. **Shape by node type**: `([...])` stadium = entry/exit point (request, response) · `{...}` diamond = decision · `[/.../]` parallelogram = processing step · `[(...)]` cylinder = DB/store. Different shape = different role, instantly recognizable.
+3. **Emoji icon at label start** for quick meaning: 👤 client · ⚙️ processing · 🗄️ DB · ✅ success · ❌ error · 🔑 auth · 📤 send · 📥 receive. 1 icon per node, don't spam.
 
-Thêm: nhãn cạnh ngắn có dấu (`-->|✓ Có|`, `-->|✗ Không|`); `subgraph` gom node cùng actor (Client / Service / DB) khi luồng qua nhiều bên.
+Also: short marked edge labels (`-->|✓ Yes|`, `-->|✗ No|`); `subgraph` to group nodes by actor (Client / Service / DB) when the flow crosses multiple parties.
 
-Quy tắc giữ diagram dễ hiểu:
-- **≤7 node mỗi diagram.** Nhiều hơn → tách thành 2 diagram hoặc gộp bước phụ.
-- Nếu một đoạn mô tả >4–5 bước tuần tự / nhiều nhánh / nhiều quan hệ → chuyển sang diagram. Chọn loại diagram đơn giản nhất biểu diễn đủ logic.
-- Label node ngắn (≤4–5 từ), tiếng Việt thường, không nhồi chi tiết vào box.
+Rules to keep diagrams readable:
+- **≤7 nodes per diagram.** More → split into 2 diagrams or merge minor steps.
+- If a passage describes >4–5 sequential steps / many branches / many relationships → convert to a diagram. Pick the simplest diagram type that expresses the logic.
+- Short node labels (≤4–5 words), plain language, don't cram detail into boxes.
 
-Template: `assets/proposal_template.html`. **Không** sinh `implementation_status.html` ở giai đoạn này — proposal là design doc, status là live tracker chỉ tạo khi đã bắt đầu code.
+Template: `assets/proposal_template.html`. Do **not** generate `implementation_status.html` at this stage — the proposal is a design doc; the status file is a live tracker created only once coding starts.
 
-### Bước 2 — Khi user nói "implement"/"làm đi"/"code đi" → init status file
+### Step 2 — When the user says "implement"/"go ahead"/"start coding" → init the status file
 
-Tạo `docs/features/<feature>/implementation_status.html` từ `assets/status_template.html`. Section "Tiến độ" liệt kê các bước high-level (sao chép từ checklist proposal nếu có), status mặc định `todo`. Flip `→ in_progress → done` khi bước thực sự bắt đầu / xong.
+Create `docs/features/<feature>/implementation_status.html` from `assets/status_template.html`. The "Progress" section lists the high-level steps (copied from the proposal checklist if one exists), default status `todo`. Flip `→ in_progress → done` as each step actually starts / finishes.
 
-Thông báo cho user 1 dòng: "Đã init status file tại `<path>`."
+Notify the user in 1 line: "Status file initialized at `<path>`."
 
-### Bước 3 — Update khi có event quan trọng
+### Step 3 — Update on significant events
 
-| Event | Section | Nội dung |
+| Event | Section | Content |
 |-------|---------|----------|
-| Bắt đầu / xong 1 bước | Tiến độ | Flip status tag |
-| Quyết định không nằm trong design gốc | Decisions | Title + **Why** |
-| Compromise / sai khác | Compromises | Bullet + lý do + impact |
-| Bug catch (chính bạn hoặc advisor) | Bugs caught & fixed | Mô tả + fix |
-| Tạo / sửa file | Files changed | Path (group "Mới" / "Sửa") |
-| Hoàn thành task | Badge top + Rollout checklist | `IN PROGRESS` → `DONE`, populate checklist |
+| A step starts / finishes | Progress | Flip status tag |
+| Decision outside the original design | Decisions | Title + **Why** |
+| Compromise / deviation | Compromises | Bullet + reason + impact |
+| Bug caught (by you or an advisor) | Bugs caught & fixed | Description + fix |
+| File created / modified | Files changed | Path (grouped "New" / "Modified") |
+| Task completed | Top badge + Rollout checklist | `IN PROGRESS` → `DONE`, populate checklist |
 
-**Không update** khi: đang debug nội bộ, retry tool call, fix syntax, đọc file để hiểu code, bước trung gian không ảnh hưởng kết quả.
+**Do not update** for: internal debugging, tool-call retries, syntax fixes, reading files to understand code, intermediate steps that don't affect the outcome.
 
-### Bước 4 — Final pass
+### Step 4 — Final pass
 
-Trước khi báo "xong":
-1. Đọc lại HTML. Xác nhận: tất cả progress row = `done`, badge top = `DONE`, files changed đủ, rollout checklist có item rõ ràng.
-2. Section "Smoke check" (optional): lệnh test/import-check đã chạy + outcome.
-3. Thông báo user 1 dòng: "Đã update status file."
+Before reporting "done":
+1. Re-read the HTML. Confirm: all progress rows = `done`, top badge = `DONE`, files changed complete, rollout checklist has clear items.
+2. Optional "Smoke check" section: test/import-check commands run + outcome.
+3. Notify the user in 1 line: "Status file updated."
 
-## Cấu trúc `implementation_status.html`
+## Structure of `implementation_status.html`
 
-Bắt buộc 4 section, theo thứ tự:
+4 mandatory sections, in order:
 
-1. **Tiến độ** — table 3 cột (`#`, `Bước`, `Trạng thái`). Tag: `t-done`/`t-prog`/`t-todo`.
-2. **Decisions + Compromises + Bugs** — gộp / chia card kiểu `.decision`. Mỗi entry: title ngắn + **Why** + **How to apply** / **Fix**.
-3. **Files changed** — chia "Mới" / "Sửa".
-4. **Rollout checklist** — ordered list các bước user làm sau merge.
+1. **Progress** — 3-column table (`#`, `Step`, `Status`). Tags: `t-done`/`t-prog`/`t-todo`.
+2. **Decisions + Compromises + Bugs** — merged / split into `.decision`-style cards. Each entry: short title + **Why** + **How to apply** / **Fix**.
+3. **Files changed** — split "New" / "Modified".
+4. **Rollout checklist** — ordered list of steps the user takes after merge.
 
-Optional khi liên quan: **Smoke check**, **Things you should know**.
+Optional when relevant: **Smoke check**, **Things you should know**.
 
-Dùng template `assets/status_template.html`. **Không** viết HTML mới từ đầu — luôn dựa template.
+Use the `assets/status_template.html` template. Do **not** write HTML from scratch — always start from the template.
 
-## Folder structure user thu được
+## Folder structure the user ends up with
 
 ```
 docs/features/<feature>/
-├── README.md                       (optional index, khi xong)
-├── proposal.html                   (nếu user yêu cầu design trước)
+├── README.md                       (optional index, on completion)
+├── proposal.html                   (if the user asked for a design phase)
 └── implementation_status.html      (live tracker)
 ```
 
-Folder đã tồn tại → **append** vào file hiện có, không overwrite. Đọc file trước khi edit.
+If the folder already exists → **append** to existing files, don't overwrite. Read files before editing.
 
-## Lý do skill tồn tại
+## Why this skill exists
 
-User chạy nhiều task implement song song. Cần artifact đọc lại sau 1 tuần vẫn hiểu được "Claude đã làm gì, đã quyết định gì khác design, có gì cần review". Câu trả lời dài cuối session không đủ. HTML cho phép structured (table, section), dễ share, diff trong git.
+The user runs many implementation tasks in parallel. They need an artifact that, read a week later, still explains "what Claude did, what it decided differently from the design, what needs review". A long end-of-session answer isn't enough. HTML allows structure (tables, sections), is easy to share, and diffs in git.
 
-Skill này không thay PR description / commit message. Là **scratchpad cho user**.
+This skill does not replace PR descriptions / commit messages. It's a **scratchpad for the user**.
 
-## Đọc thêm
+## Further reading
 
-- `assets/status_template.html` — template HTML cho `implementation_status.html`.
-- `assets/proposal_template.html` — template HTML cho `proposal.html`.
-- `references/triggering.md` — danh sách phrase trigger / pause / resume.
+- `assets/status_template.html` — HTML template for `implementation_status.html`.
+- `assets/proposal_template.html` — HTML template for `proposal.html`.
+- `references/triggering.md` — list of trigger / pause / resume phrases.

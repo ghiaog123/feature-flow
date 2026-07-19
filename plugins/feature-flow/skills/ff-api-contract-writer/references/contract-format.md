@@ -1,42 +1,42 @@
-# Format chuẩn cho API Contract Markdown
+# Standard format for the API Contract Markdown
 
-Template **bắt buộc** cho output của skill `ff-api-contract-writer`. Sao chép cấu trúc và điền vào — không tự sáng tạo cấu trúc khác. Ví dụ dưới viết tiếng Việt; nếu user yêu cầu ngôn ngữ khác, dịch phần mô tả/heading phụ ("Mục lục" → "Table of Contents", v.v.) nhưng giữ nguyên cấu trúc.
+**Mandatory** template for the output of the `ff-api-contract-writer` skill. Copy the structure and fill it in — do not invent a different structure. The example below is written in English (the default output language); if the user requests another language, translate the descriptions/sub-headings ("Table of Contents", etc.) but keep the structure unchanged.
 
 ---
 
-## Template đầy đủ
+## Full template
 
 ```markdown
-# API Contract — <Tên Service>
+# API Contract — <Service Name>
 
-> **Base URL**: `http://localhost:<port>` (placeholder — thay theo môi trường)
-> **Authentication**: <auth mặc định, ví dụ: API Key qua header `X-API-Key`, áp dụng mọi endpoint trừ ghi chú khác>
+> **Base URL**: `http://localhost:<port>` (placeholder — replace per environment)
+> **Authentication**: <default auth, e.g.: API Key via header `X-API-Key`, applies to every endpoint unless noted otherwise>
 
-## Mục lục
+## Table of Contents
 
-| # | Method | Path | Mô tả ngắn |
-|---|--------|------|------------|
-| 1 | `POST` | [`/api/v1/items`](#1-post-apiv1items) | Tạo item, đưa vào pipeline xử lý nền |
-| 2 | `GET`  | [`/api/v1/items/{item_id}`](#2-get-apiv1itemsitem_id) | Lấy trạng thái item |
+| # | Method | Path | Short description |
+|---|--------|------|-------------------|
+| 1 | `POST` | [`/api/v1/items`](#1-post-apiv1items) | Create an item and enqueue it into the background processing pipeline |
+| 2 | `GET`  | [`/api/v1/items/{item_id}`](#2-get-apiv1itemsitem_id) | Get an item's status |
 
 ---
 
 ## 1. `POST /api/v1/items`
 
-**Mô tả**: Tạo (hoặc cập nhật) item và đưa vào xử lý nền. Idempotent theo `(user_id, item_id)` — nếu job xử lý trước đó còn đang chạy, trả thông tin job đó (`dedup_hit=true`) thay vì tạo mới.
+**Description**: Create (or update) an item and enqueue it for background processing. Idempotent per `(user_id, item_id)` — if a previous processing job is still running, returns that job's info (`dedup_hit=true`) instead of creating a new one.
 
 ### Request
 
 #### Body (`application/json`)
 
-| Field | Kiểu | Bắt buộc | Mặc định | Mô tả |
-|-------|------|----------|----------|-------|
-| `item_id` | `string` | ✅ | — | ID item (client cung cấp) |
-| `user_id` | `string` | ✅ | — | ID người dùng sở hữu |
-| `name` | `string` | ✅ | — | Tên hiển thị |
-| `group_id` | `string` | ❌ | `"default"` | Nhóm chứa item. Độ dài 1–128 ký tự |
+| Field | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `item_id` | `string` | ✅ | — | Item ID (client-provided) |
+| `user_id` | `string` | ✅ | — | ID of the owning user |
+| `name` | `string` | ✅ | — | Display name |
+| `group_id` | `string` | ❌ | `"default"` | Group containing the item. Length 1–128 characters |
 
-#### Ví dụ
+#### Example
 
 ```bash
 curl -X POST "http://localhost:8000/api/v1/items" \
@@ -47,7 +47,7 @@ curl -X POST "http://localhost:8000/api/v1/items" \
 
 ### Response
 
-#### `202 Accepted` — Đã nhận và enqueue (hoặc dedup hit)
+#### `202 Accepted` — Accepted and enqueued (or dedup hit)
 
 ```json
 {
@@ -58,13 +58,13 @@ curl -X POST "http://localhost:8000/api/v1/items" \
 }
 ```
 
-| Field | Kiểu | Mô tả |
-|-------|------|-------|
+| Field | Type | Description |
+|-------|------|-------------|
 | `status` | `string` | `pending` / `processing` / `ready` / `failed` |
-| `job_id` | `string` | ID job tracking. Dedup hit → giữ `job_id` của job đang chạy |
-| `dedup_hit` | `boolean` | `true` khi job cũ còn chạy, không tạo job mới |
+| `job_id` | `string` | Job tracking ID. Dedup hit → keeps the running job's `job_id` |
+| `dedup_hit` | `boolean` | `true` when a previous job is still running and no new job was created |
 
-#### `409 Conflict` — Đang có request ghi đồng thời cùng item
+#### `409 Conflict` — A concurrent write request for the same item is in progress
 
 ```json
 {
@@ -76,23 +76,23 @@ curl -X POST "http://localhost:8000/api/v1/items" \
 
 ## 2. `GET /api/v1/items/{item_id}`
 
-**Mô tả**: Lấy trạng thái hiện tại của một item.
+**Description**: Get the current status of an item.
 
 ### Request
 
 #### Path params
 
-| Tên | Kiểu | Bắt buộc | Mô tả |
-|-----|------|----------|-------|
-| `item_id` | `string` | ✅ | ID item |
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `item_id` | `string` | ✅ | Item ID |
 
 #### Query params
 
-| Tên | Kiểu | Bắt buộc | Mặc định | Mô tả |
-|-----|------|----------|----------|-------|
-| `user_id` | `string` | ✅ | — | ID người sở hữu (scope truy vấn) |
+| Name | Type | Required | Default | Description |
+|------|------|----------|---------|-------------|
+| `user_id` | `string` | ✅ | — | ID of the owner (query scope) |
 
-#### Ví dụ
+#### Example
 
 ```bash
 curl -X GET "http://localhost:8000/api/v1/items/it_001?user_id=u_123" \
@@ -112,11 +112,11 @@ curl -X GET "http://localhost:8000/api/v1/items/it_001?user_id=u_123" \
 }
 ```
 
-| Field | Kiểu | Mô tả |
-|-------|------|-------|
+| Field | Type | Description |
+|-------|------|-------------|
 | `status` | `string` | `pending` / `processing` / `ready` / `failed` |
-| `error` | `string \| null` | Thông báo lỗi khi `status=failed`, ngược lại `null` |
-| `updated_at` | `string (ISO 8601)` | Thời điểm cập nhật gần nhất |
+| `error` | `string \| null` | Error message when `status=failed`, otherwise `null` |
+| `updated_at` | `string (ISO 8601)` | Time of the most recent update |
 
 #### `404 Not Found`
 
@@ -128,26 +128,26 @@ curl -X GET "http://localhost:8000/api/v1/items/it_001?user_id=u_123" \
 
 ---
 
-## Phụ lục — Lỗi chung
+## Appendix — Common errors
 
-Áp dụng cho mọi endpoint (trừ ghi chú khác), không lặp lại ở từng endpoint:
+Apply to every endpoint (unless noted otherwise); do not repeat them per endpoint:
 
-| Status | Khi nào | Shape |
-|--------|---------|-------|
-| `401 Unauthorized` | Thiếu hoặc sai header `X-API-Key` | `{"detail": "Invalid API key"}` |
-| `422 Unprocessable Entity` | Body/query/path không qua validation schema | `{"detail": [{"type": "...", "loc": [...], "msg": "...", "input": ...}]}` |
-| `500 Internal Server Error` | Lỗi không bắt được trong handler | — |
+| Status | When | Shape |
+|--------|------|-------|
+| `401 Unauthorized` | Missing or invalid `X-API-Key` header | `{"detail": "Invalid API key"}` |
+| `422 Unprocessable Entity` | Body/query/path fails schema validation | `{"detail": [{"type": "...", "loc": [...], "msg": "...", "input": ...}]}` |
+| `500 Internal Server Error` | Unhandled error in the handler | — |
 ```
 
 ---
 
-## Quy tắc trình bày
+## Presentation rules
 
-1. **Heading endpoint**: `## <số>. \`<METHOD> <path>\`` — số thứ tự để link mục lục.
-2. **Cột "Bắt buộc"**: chỉ `✅` / `❌`.
-3. **Section trống**: endpoint không có Path params / Query params / Body / Headers riêng → **bỏ hẳn section**, không ghi placeholder. Header auth chung đã khai báo đầu file → không lặp bảng Headers ở từng endpoint.
-4. **Status code**: mỗi status một sub-heading `#### \`<code>\` <reason> — <điều kiện ngắn>`. Chỉ liệt kê lỗi **đặc thù của endpoint** (404, 409, 422 nghiệp vụ riêng kèm điều kiện cụ thể); lỗi chung → Phụ lục.
-5. **Bảng field response**: chỉ thêm khi field cần giải thích (enum values, điều kiện null, ý nghĩa không hiển nhiên). Response mà example JSON tự giải thích đủ → bỏ bảng. Field hiển nhiên (`item_id` = "ID item") không cần dòng riêng nếu cả bảng chỉ toàn dòng như vậy.
-6. **JSON example**: phải parse được. Giá trị không xác định → placeholder rõ ràng `"<item_id>"`.
-7. **Mô tả**: 1–3 câu, behavior caller thấy được. Không nhắc công nghệ nội bộ (DB, queue, cache, lock).
-8. **Field suy luận không chắc**: note `_(suy luận từ code, cần xác nhận)_` ngay sau mô tả.
+1. **Endpoint heading**: `## <number>. \`<METHOD> <path>\`` — the sequence number is for table-of-contents links.
+2. **"Required" column**: only `✅` / `❌`.
+3. **Empty sections**: endpoint with no Path params / Query params / Body / dedicated Headers → **omit the section entirely**, no placeholder. The common auth header declared at the top of the file → do not repeat a Headers table per endpoint.
+4. **Status codes**: one sub-heading per status `#### \`<code>\` <reason> — <short condition>`. Only list errors **specific to the endpoint** (endpoint-specific 404, 409, 422 business errors with their concrete conditions); common errors → Appendix.
+5. **Response field table**: only add it when fields need explanation (enum values, null conditions, non-obvious meaning). If the example JSON is self-explanatory → drop the table. Obvious fields (`item_id` = "item ID") don't need their own row if the whole table would consist only of such rows.
+6. **JSON examples**: must be parseable. Undetermined values → clear placeholder `"<item_id>"`.
+7. **Descriptions**: 1–3 sentences, caller-observable behavior. No internal technology mentions (DB, queue, cache, lock).
+8. **Uncertain inferred fields**: note `_(inferred from code, needs confirmation)_` right after the description.

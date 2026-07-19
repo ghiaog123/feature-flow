@@ -1,45 +1,45 @@
 # Analysis Brief — template (Stage 2)
 
-Từ chẩn đoán (`assessment.md`) → giải pháp hành động được. Ghi ra `docs/features/<feature>/analysis_brief.md`. Đây là đầu vào cho `ff-planning`.
+From the diagnosis (`assessment.md`) → an actionable solution. Write to `docs/features/<feature>/analysis_brief.md`. This is the input for `ff-planning`.
 
 ```markdown
-# Analysis Brief — <phát biểu vấn đề một câu>
+# Analysis Brief — <one-sentence problem statement>
 
-- **Ngày**: <YYYY-MM-DD>
-- **Người tham gia**: Claude Code ⇄ Codex
-- **Trạng thái debate**: Consensus | Stalemate (cần user chốt)
-- **Assessment nguồn**: docs/features/<feature>/assessment.md
+- **Date**: <YYYY-MM-DD>
+- **Participants**: Claude Code ⇄ Codex
+- **Debate status**: Consensus | Stalemate (user must decide)
+- **Source assessment**: docs/features/<feature>/assessment.md
 
-## Quyết định
-<Chọn phương án nào (hoặc kết hợp). Dứt khoát, một đoạn.>
+## Decision
+<Which option (or combination) is chosen. Decisive, one paragraph.>
 
-## Lý do
-- <lý do 1 — bám đồng thuận / bằng chứng mạnh nhất từ debate>
-- <lý do 2>
+## Rationale
+- <reason 1 — grounded in consensus / the strongest evidence from the debate>
+- <reason 2>
 
-## Các phương án đã cân nhắc
-| Phương án | Ưu | Nhược | Vì sao chọn/loại |
+## Options considered
+| Option | Pros | Cons | Why chosen/rejected |
 |---|---|---|---|
-| A (chọn) | | | |
+| A (chosen) | | | |
 | B | | | |
 
-## Đánh đổi đã chấp nhận
-- <hy sinh gì, đổi lấy gì>
+## Accepted trade-offs
+- <what is sacrificed, in exchange for what>
 
-## Bước tiếp theo (để ff-planning bám)
-- [ ] <hành động cụ thể>
+## Next steps (for ff-planning to follow)
+- [ ] <concrete action>
 - [ ] <...>
 
-## Bất đồng còn lại (nếu stalemate)
-| Điểm | Claude | Codex | Khuyến nghị |
+## Remaining disagreements (if stalemate)
+| Point | Claude | Codex | Recommendation |
 |---|---|---|---|
 
-## Rủi ro / cần kiểm chứng thêm
-- <rủi ro> → kiểm bằng <cách>
+## Risks / needs further verification
+- <risk> → verify via <method>
 
-## Nguồn hợp nhất
-- <link/file:line + ngày truy cập>
+## Consolidated sources
+- <link/file:line + access date>
 
-## Độ tin cậy
-<Cao | Trung bình | Thấp> — <vì sao>
+## Confidence
+<High | Medium | Low> — <why>
 ```

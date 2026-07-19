@@ -1,170 +1,170 @@
 ---
 name: ff-problem-solver
-description: Giải một vấn đề kỹ thuật khó bằng cách để Claude Code và Codex tranh luận như hai chuyên gia ngang hàng, rồi chốt kết luận có thể hành động. Chạy 2 stage tùy request gốc — Stage 1 ASSESSMENT (chẩn đoán, luôn chạy), Stage 2 SOLUTION (đề xuất giải pháp, chỉ khi user đòi). Skill nhận vấn đề (quyết định kiến trúc, chọn công nghệ, gỡ bug khó, đánh đổi thiết kế, root-cause mơ hồ), làm rõ phạm vi + ý định, để Claude phân tích độc lập, sau đó invoke /codex-think-about cho Claude và Codex phản biện qua nhiều vòng, cuối cùng gộp thành assessment.md và (nếu đòi) analysis_brief.md + decision record. Dùng khi user nói "giải quyết vấn đề này", "cho hai bên tranh luận", "claude với codex bàn xem", "phản biện rồi chốt", "vấn đề này nên làm thế nào", "phân tích/đánh giá cái này", "đưa ra kết luận cuối cùng cho...", "debate rồi quyết". KHÔNG dùng cho: review code/PR đã viết (dùng codex-review), tạo doc/test/status (các skill khác trong bundle), hay câu hỏi đơn giản trả lời ngay được mà không cần tranh luận.
+description: Solve a hard technical problem by having Claude Code and Codex debate as two peer experts, then lock in an actionable conclusion. Runs 2 stages depending on the original request — Stage 1 ASSESSMENT (diagnosis, always runs), Stage 2 SOLUTION (proposed solution, only when the user asks). The skill takes a problem (architecture decision, technology choice, hard bug, design trade-off, murky root cause), clarifies scope + intent, lets Claude analyze independently, then invokes /codex-think-about for Claude and Codex to challenge each other over multiple rounds, and finally merges into assessment.md and (if requested) analysis_brief.md + a decision record. Use when the user says "solve this problem", "have the two sides debate", "have claude and codex discuss this", "challenge it then lock in a conclusion", "how should we approach this problem", "analyze/assess this", "give the final conclusion for...", "debate then decide". Do NOT use for reviewing written code/PRs (use codex-review), producing docs/tests/status (other skills in the bundle), or simple questions answerable immediately without debate.
 ---
 
 # Problem Solver (Claude ⇄ Codex)
 
-Giải vấn đề kỹ thuật khó bằng **tranh luận ngang hàng** giữa Claude và Codex, rồi **chốt kết luận hành động được**. Skill này là lớp bọc quanh `/codex-think-about`: nó thêm phần **đóng khung vấn đề** ở đầu, **hai stage debate** ở giữa, và **gộp artifact ra đĩa** ở cuối — `/codex-think-about` lo phần debate engine trong mỗi stage.
+Solve hard technical problems through a **peer debate** between Claude and Codex, then **lock in an actionable conclusion**. This skill is a wrapper around `/codex-think-about`: it adds **problem framing** up front, **two debate stages** in the middle, and **merging artifacts to disk** at the end — `/codex-think-about` handles the debate engine within each stage.
 
-Skill ra **một trong hai deliverable** tùy request gốc:
-- **Chỉ chẩn đoán** ("phân tích/đánh giá cái này") → dừng ở `assessment.md`.
-- **Chẩn đoán + giải pháp** ("nên làm gì/fix thế nào") → chạy tiếp Stage 2 → `analysis_brief.md`.
+The skill produces **one of two deliverables** depending on the original request:
+- **Diagnosis only** ("analyze/assess this") → stop at `assessment.md`.
+- **Diagnosis + solution** ("what should we do / how to fix") → continue to Stage 2 → `analysis_brief.md`.
 
 ```
-Vấn đề (user)
+Problem (user)
    │
    ▼
-[1] Đóng khung + phát hiện ý định (chẩn đoán? / chẩn đoán+giải pháp?)   ← skill này
+[1] Frame + detect intent (diagnosis? / diagnosis+solution?)   ← this skill
    │
    ▼
-[2] Deep-dive code (adaptive: inline hoặc tỏa sub-agent) — Claude độc lập, rào thông tin
+[2] Code deep-dive (adaptive: inline or fan out sub-agents) — Claude independent, information barrier
    │
    ▼
-╔═══ STAGE 1 — ASSESSMENT (luôn chạy) ═══════════════════════╗
-║  mỗi bên phân tích độc lập → md riêng                       ║
-║  → peer debate  ← delegate /codex-think-about (framing: chẩn đoán) ║
-║  → gộp assessment.md                                        ║
+╔═══ STAGE 1 — ASSESSMENT (always runs) ═════════════════════╗
+║  each side analyzes independently → own md                 ║
+║  → peer debate  ← delegate /codex-think-about (framing: diagnosis) ║
+║  → merge assessment.md                                      ║
 ╚═════════════════════════════════════════════════════════════╝
    │
-   ├─ request KHÔNG đòi giải pháp → trả assessment, DỪNG
+   ├─ request does NOT ask for a solution → deliver assessment, STOP
    │
-   └─ request ĐÒI giải pháp
+   └─ request DOES ask for a solution
         │
         ▼
-╔═══ STAGE 2 — SOLUTION (chỉ khi đòi) ═══════════════════════╗
-║  từ assessment → mỗi bên đề xuất giải pháp độc lập → md riêng║
-║  → peer debate  ← delegate /codex-think-about (framing: giải pháp)║
-║  → gộp analysis_brief.md                                    ║
+╔═══ STAGE 2 — SOLUTION (only when asked) ═══════════════════╗
+║  from the assessment → each side proposes independently → own md║
+║  → peer debate  ← delegate /codex-think-about (framing: solution)║
+║  → merge analysis_brief.md                                  ║
 ╚═════════════════════════════════════════════════════════════╝
    │
    ▼
-[Compact có kiểm soát] → chain sang ff-planning
+[Controlled compact] → chain to ff-planning
 ```
 
-## Nguyên tắc cốt lõi
+## Core principles
 
-- **Claude và Codex ngang hàng** — không ai là reviewer, không ai là người thực thi. Hai chuyên gia phản biện nhau.
-- **Rào thông tin**: Claude PHẢI hoàn tất phân tích độc lập của mình TRƯỚC khi đọc output của Codex. Không xem trộm để tránh thiên kiến mỏ neo.
-- **Tranh luận để hội tụ, không để thắng**: mục tiêu là kết luận đúng, không phải bảo vệ quan điểm ban đầu. Đổi ý khi đối phương có bằng chứng tốt hơn là kết quả tốt.
-- **Tách dữ kiện khỏi ý kiến**: claim tra cứu được phải có nguồn; suy luận/đánh giá ghi rõ là quan điểm.
-- **Codex KHÔNG sửa file project** — chỉ tư duy + (nếu cần) web research. Nếu phát hiện Codex sửa file, dừng ngay theo File Modification Guard của `/codex-think-about`.
-- **Tái dùng debate engine, compose nhiều lần**: mỗi stage gọi `/codex-think-about` một lần với framing khác nhau (chẩn đoán ≠ giải pháp). Không tự chế giao thức codex riêng.
-- **Artifact ra đĩa, main giữ gọn**: kết quả cuối mỗi stage ghi thành file `.md`; transcript debate + md từng bên + report deep-dive chỉ là trung gian, gộp xong thì bỏ (xem "Vệ sinh context").
+- **Claude and Codex are peers** — neither is the reviewer, neither is the executor. Two experts challenging each other.
+- **Information barrier**: Claude MUST complete its independent analysis BEFORE reading any Codex output. No peeking, to avoid anchoring bias.
+- **Debate to converge, not to win**: the goal is the correct conclusion, not defending the initial position. Changing your mind when the other side has better evidence is a good outcome.
+- **Separate facts from opinions**: verifiable claims must have sources; inferences/judgments are explicitly labeled as opinion.
+- **Codex does NOT modify project files** — thinking + (if needed) web research only. If Codex is caught modifying files, stop immediately per `/codex-think-about`'s File Modification Guard.
+- **Reuse the debate engine, compose it multiple times**: each stage calls `/codex-think-about` once with different framing (diagnosis ≠ solution). Don't invent your own codex protocol.
+- **Artifacts to disk, main stays lean**: each stage's final result is written to a `.md` file; debate transcripts + each side's md + deep-dive reports are intermediates — discard after merging (see "Context hygiene").
 
 ## Workflow
 
-### Bước 1 — Đóng khung vấn đề + phát hiện ý định
+### Step 1 — Frame the problem + detect intent
 
-Trước khi tranh luận, làm rõ để cả hai bên cùng giải đúng một bài. Hỏi user (gộp tối đa 2-3 câu, đừng tra tấn):
+Before debating, clarify so both sides solve the same problem. Ask the user (batch at most 2-3 questions, don't interrogate):
 
-| Cần | Vì sao |
+| Need | Why |
 |---|---|
-| **Phát biểu vấn đề** một câu, rõ "cái cần quyết/hiểu" | Tránh hai bên debate lệch đề |
-| **Tiêu chí thành công** / ràng buộc (perf, deadline, stack, không được đổi gì) | Để kết luận đo được, không chung chung |
-| **Bối cảnh project** + file/đoạn code liên quan | Cho debate bám thực tế, không lý thuyết suông |
-| **Các phương án đang cân nhắc** (nếu user đã có) | Mở rộng/phản biện thay vì bắt đầu từ 0 |
-| **Mức effort** cho Codex (mặc định `high`) | Vấn đề khó → effort cao |
+| **Problem statement** in one sentence, clear on "what to decide/understand" | Prevents the two sides from debating different problems |
+| **Success criteria** / constraints (perf, deadline, stack, what may not change) | Makes the conclusion measurable, not generic |
+| **Project context** + relevant files/code | Grounds the debate in reality, not pure theory |
+| **Options already under consideration** (if the user has any) | Extend/challenge instead of starting from zero |
+| **Effort level** for Codex (default `high`) | Hard problem → high effort |
 
-**Phát hiện ý định (quyết định deliverable):**
-- Tín hiệu **chỉ chẩn đoán**: "phân tích", "đánh giá", "hiểu vì sao", "cái gì đang xảy ra", "root cause là gì" → dừng ở Stage 1.
-- Tín hiệu **chẩn đoán + giải pháp**: "nên làm gì", "fix thế nào", "giải pháp", "cách xử lý", "quyết định phương án nào" → chạy tiếp Stage 2.
-- **Mơ hồ** → dùng `AskUserQuestion` hỏi user muốn dừng ở chẩn đoán hay đi tiếp tới giải pháp. Đừng đoán.
+**Intent detection (decides the deliverable):**
+- **Diagnosis-only** signals: "analyze", "assess", "understand why", "what is happening", "what's the root cause" → stop at Stage 1.
+- **Diagnosis + solution** signals: "what should we do", "how to fix", "solution", "how to handle", "decide which option" → continue to Stage 2.
+- **Ambiguous** → use `AskUserQuestion` to ask whether to stop at diagnosis or continue to a solution. Don't guess.
 
-Nếu phát biểu vấn đề mơ hồ → đề xuất một bản viết lại sắc hơn, xác nhận với user rồi mới chạy. (Tham khảo `references/question-sharpening.md` của codex-think-about nếu cần khung làm rõ.)
+If the problem statement is vague → propose a sharper rewrite, confirm with the user, then run. (See codex-think-about's `references/question-sharpening.md` if you need a clarification framework.)
 
-**Thang từ vựng (khi phát biểu dùng từ mờ — "làm nó tốt hơn", "fix cho nó nhanh", "cải thiện cái này"):** trước khi đóng khung, dịch từ mờ → ngôn ngữ kỹ thuật chính xác:
-- **Nêu từ mờ**: liệt kê đúng những chữ chưa đo được ("tốt hơn", "nhanh", "sạch", "gọn").
-- **Neo mỗi từ vào nghĩa kỹ thuật cụ thể**, bám codebase/domain thật ("nhanh" = p95 latency của endpoint X < 200ms; "tốt hơn" = giảm coupling giữa module A↔B).
-- **Xác nhận với user** bản đã neo trước khi chạy.
-Mục đích: hai bên phải debate **cùng một bài đã sắc**, không phải hai bài mờ khác nhau.
+**Vocabulary ladder (when the statement uses fuzzy words — "make it better", "fix it so it's fast", "improve this"):** before framing, translate fuzzy words → precise technical language:
+- **List the fuzzy words**: exactly the unmeasured words ("better", "fast", "clean", "tidy").
+- **Anchor each word to a concrete technical meaning**, grounded in the real codebase/domain ("fast" = p95 latency of endpoint X < 200ms; "better" = reduce coupling between modules A↔B).
+- **Confirm the anchored version with the user** before running.
+Purpose: both sides must debate **the same sharpened problem**, not two different fuzzy ones.
 
-**Không đưa ý kiến giải pháp ở bước này** — giữ trung lập tới khi vào tranh luận.
+**Do not offer solution opinions at this step** — stay neutral until the debate.
 
-### Bước 2 — Deep-dive code (RÀO THÔNG TIN, adaptive)
+### Step 2 — Code deep-dive (INFORMATION BARRIER, adaptive)
 
-Trước khi gọi Codex/đọc bất cứ output nào của Codex, Claude tự hiểu địa hình vấn đề. **Chọn cách theo quy mô (adaptive-by-size — cổng chống over-engineer):**
+Before calling Codex / reading any Codex output, Claude maps the problem terrain itself. **Pick the approach by size (adaptive-by-size — the anti-over-engineering gate):**
 
-- **Vấn đề nhỏ / phạm vi hẹp** (vài file, đã biết chỗ) → deep-dive **inline** bằng Glob/Grep/Read ngay trên main. Không tỏa sub-agent.
-- **Vấn đề lớn / phải quét rộng** (nhiều module, chưa biết touchpoint, hoặc cần cả web research) → **tỏa parallel**:
-  1. **Index rẻ trước**: nếu có sẵn công cụ index code (vd `graphify`), chạy để có bản đồ nhanh; nếu không → một lượt Glob/Grep định vị vùng.
-  2. **Fan-out trong 1 message**: nhiều sub-agent `Explore`/`general-purpose` chạy song song, mỗi con một góc (module, luồng dữ liệu, test hiện có, tài liệu/web). Yêu cầu mỗi con trả **report gọn `file:line` + phát hiện**, KHÔNG dump code.
-  3. **Main chỉ giữ report gộp** — không nuốt toàn bộ file vào context main.
+- **Small problem / narrow scope** (a few files, location known) → deep-dive **inline** with Glob/Grep/Read right on main. No sub-agents.
+- **Large problem / wide sweep needed** (many modules, touchpoints unknown, or web research also needed) → **fan out in parallel**:
+  1. **Cheap indexing first**: if a code index tool exists (e.g. `graphify`), run it for a quick map; otherwise → one Glob/Grep pass to locate the area.
+  2. **Fan-out in 1 message**: multiple `subagent_type: 'ff-sonnet-explorer'` sub-agents in parallel, each on one angle (module, data flow, existing tests, docs/web) — Sonnet handles search/read/synthesize work at near-parity for a fraction of the cost. The agent's own definition enforces the tight `EXPLORE REPORT` format (`file:line` findings, no code dumps, read-only).
+  3. **Main keeps only the merged report** — don't swallow entire files into main context.
 
-Từ hiểu biết đó, Claude viết **phân tích độc lập** của mình: các khả năng/giả thuyết, đánh đổi, rủi ro, khuyến nghị sơ bộ + độ tin cậy + giả định đang dựa vào. MAY dùng MCP tools (web_search, context7) — ghi nguồn.
+From that understanding, Claude writes its **independent analysis**: possibilities/hypotheses, trade-offs, risks, preliminary recommendation + confidence + assumptions being relied on. MAY use MCP tools (web_search, context7) — cite sources.
 
-Phân tích này phải **hoàn chỉnh và cuối cùng** trước khi vào debate. Đây là "lá phiếu độc lập" của Claude.
+This analysis must be **complete and final** before entering the debate. It is Claude's "independent ballot".
 
-**Blindspot Pass (kiểm ẩn số — bắt buộc, ngay sau phân tích độc lập, TRƯỚC debate):** Claude tự soát cái mình CHƯA kiểm — giả định đang dựa vào, vùng code/domain chưa đọc, edge case chưa xét, "chỗ nào mình có thể sai ở đây?". Xuất một danh sách ngắn có cấu trúc, mỗi ẩn số kèm **tag độ tin cậy** (Cao/TB/Thấp) và **cách đóng** (đọc file nào / hỏi ai / test gì). Đây KHÔNG phải điểm yếu để giấu — mỗi blindspot thành **debate item tường minh** để Codex công vào; debate phải đánh cả vào ẩn số, không chỉ vào giả thuyết đã nêu. Danh sách này đi thẳng vào framing debate và vào `assessment.md`.
+**Blindspot Pass (unknowns check — mandatory, right after the independent analysis, BEFORE the debate):** Claude audits what it has NOT verified — assumptions being relied on, code/domain areas not read, edge cases not considered, "where could I be wrong here?". Output a short structured list, each unknown with a **confidence tag** (High/Medium/Low) and **how to close it** (which file to read / whom to ask / what to test). These are NOT weaknesses to hide — each blindspot becomes an **explicit debate item** for Codex to attack; the debate must probe the unknowns, not just the stated hypotheses. This list goes straight into the debate framing and into `assessment.md`.
 
-### Stage 1 — ASSESSMENT (luôn chạy)
+### Stage 1 — ASSESSMENT (always runs)
 
-**Mục tiêu**: chẩn đoán đúng vấn đề (bản chất, nguyên nhân, ràng buộc, rủi ro) — CHƯA bàn giải pháp.
+**Goal**: diagnose the problem correctly (nature, causes, constraints, risks) — NO solution talk yet.
 
-1. **Mỗi bên độc lập → md riêng**: Claude ghi chẩn đoán của mình; Codex (qua debate engine) đưa chẩn đoán của Codex. Giữ rào thông tin.
-2. **Peer debate**: invoke Skill `codex-think-about`, framing về **chẩn đoán**:
-   - **QUESTION** = "Chẩn đoán vấn đề: `<phát biểu>` — bản chất/nguyên nhân/ràng buộc/rủi ro là gì?"
-   - **PROJECT_CONTEXT** = bối cảnh + ràng buộc + tiêu chí thành công + report deep-dive gộp ở Bước 2 + **danh sách blindspot** (ẩn số chưa kiểm) để Codex probe, không chỉ probe giả thuyết đã nêu.
-   - **RELEVANT_FILES** = file/đoạn code liên quan (đường dẫn, không dán nguyên khối).
-   - **CONSTRAINTS** = điều không được vi phạm.
-   - **EFFORT** = mức đã chốt (mặc định `high`).
-   Mang **phân tích độc lập ở Bước 2** làm lập trường mở màn của Claude — không vứt đi nghĩ lại từ đầu.
-3. **Gộp `assessment.md`**: ghi `docs/features/<feature>/assessment.md` (hoặc nơi user chỉ định) theo `references/assessment-template.md`. Trong lúc debate, phân loại từng điểm: **Đồng thuận thật / Bất đồng thật / Insight riêng Claude / Insight riêng Codex / Cùng hướng khác độ sâu**. Ghi cả các **blindspot** đã đóng / còn mở sau debate + độ tin cậy vào mục "Blindspots / Ẩn số chưa đóng".
+1. **Each side independently → own md**: Claude writes its diagnosis; Codex (via the debate engine) gives its own. Maintain the information barrier.
+2. **Peer debate**: invoke Skill `codex-think-about`, framed on **diagnosis**:
+   - **QUESTION** = "Diagnose the problem: `<statement>` — what are its nature/causes/constraints/risks?"
+   - **PROJECT_CONTEXT** = context + constraints + success criteria + the merged deep-dive report from Step 2 + **the blindspot list** (unverified unknowns) so Codex probes them, not just the stated hypotheses.
+   - **RELEVANT_FILES** = relevant files/code (paths, don't paste whole blocks).
+   - **CONSTRAINTS** = what must not be violated.
+   - **EFFORT** = the agreed level (default `high`).
+   Bring the **independent analysis from Step 2** as Claude's opening position — don't discard it and rethink from scratch.
+3. **Merge `assessment.md`**: write `docs/features/<feature>/assessment.md` (or where the user specifies) per `references/assessment-template.md`. During the debate, classify each point: **True consensus / True disagreement / Claude-only insight / Codex-only insight / Same direction, different depth**. Also record the **blindspots** closed / still open after the debate + confidence in the "Blindspots / open unknowns" section.
 
-Tôn trọng mọi luật của codex-think-about (rào thông tin, không cap số vòng, chỉ thoát khi consensus hoặc stalemate, File Modification Guard, luôn finalize+stop). Nếu `/codex-think-about` không khả dụng → báo user cài đặt, KHÔNG tự chế giao thức codex riêng.
+Respect all codex-think-about rules (information barrier, no round cap, exit only on consensus or stalemate, File Modification Guard, always finalize+stop). If `/codex-think-about` is unavailable → tell the user to install it; do NOT invent your own codex protocol.
 
-### Nhánh — dừng hay đi tiếp?
+### Branch — stop or continue?
 
-- **Request KHÔNG đòi giải pháp** → trình `assessment.md`, tóm tắt chẩn đoán + bất đồng còn lại (nếu stalemate), **DỪNG**. Gợi ý: nếu sau này muốn giải pháp, chạy lại skill này với yêu cầu "đề xuất giải pháp" (dùng lại assessment.md).
-- **Request ĐÒI giải pháp** → sang Stage 2.
+- **Request does NOT ask for a solution** → present `assessment.md`, summarize the diagnosis + remaining disagreements (if stalemate), **STOP**. Suggest: if a solution is wanted later, rerun this skill with a "propose a solution" request (reusing assessment.md).
+- **Request DOES ask for a solution** → go to Stage 2.
 
-### Stage 2 — SOLUTION (chỉ khi đòi)
+### Stage 2 — SOLUTION (only when asked)
 
-**Mục tiêu**: từ chẩn đoán đã chốt → đề xuất giải pháp hành động được.
+**Goal**: from the locked diagnosis → propose an actionable solution.
 
-1. **Mỗi bên đề xuất độc lập → md riêng**: dựa trên `assessment.md`, Claude đề xuất phương án của mình; Codex đề xuất của Codex. Rào thông tin lần nữa.
-2. **Peer debate**: invoke lại Skill `codex-think-about`, framing về **giải pháp**:
-   - **QUESTION** = "Dựa trên chẩn đoán đã chốt, giải pháp tốt nhất cho `<phát biểu>` là gì?"
-   - **PROJECT_CONTEXT** = tóm tắt `assessment.md` + ràng buộc + tiêu chí thành công.
-   - **RELEVANT_FILES**, **CONSTRAINTS**, **EFFORT** như trên.
-3. **Gộp `analysis_brief.md`**: chốt thành brief hành động được, ghi `docs/features/<feature>/analysis_brief.md` theo `references/brief-template.md`:
-   1. **Quyết định**: chọn phương án nào (hoặc kết hợp), dứt khoát.
-   2. **Lý do**: 2-4 lý do chính, dựa trên đồng thuận + bằng chứng mạnh nhất từ debate.
-   3. **Đánh đổi đã chấp nhận**: thẳng thắn cái gì phải hy sinh.
-   4. **Bất đồng còn lại** (nếu stalemate): bảng `Điểm | Claude | Codex` + khuyến nghị nên nghiêng bên nào; nếu thật sự cần user quyết → hỏi.
-   5. **Bước tiếp theo**: checklist hành động cụ thể để hiện thực quyết định.
-   6. **Rủi ro / cần kiểm chứng thêm**: cái gì chưa chắc, kiểm thế nào.
-   7. **Nguồn hợp nhất** + **độ tin cậy** của kết luận.
+1. **Each side proposes independently → own md**: based on `assessment.md`, Claude proposes its option; Codex proposes its own. Information barrier again.
+2. **Peer debate**: invoke Skill `codex-think-about` again, framed on **solution**:
+   - **QUESTION** = "Given the locked diagnosis, what is the best solution for `<statement>`?"
+   - **PROJECT_CONTEXT** = summary of `assessment.md` + constraints + success criteria.
+   - **RELEVANT_FILES**, **CONSTRAINTS**, **EFFORT** as above.
+3. **Merge `analysis_brief.md`**: consolidate into an actionable brief, written to `docs/features/<feature>/analysis_brief.md` per `references/brief-template.md`:
+   1. **Decision**: which option (or combination) is chosen — decisively.
+   2. **Rationale**: 2-4 main reasons, based on consensus + the strongest evidence from the debate.
+   3. **Accepted trade-offs**: be blunt about what is sacrificed.
+   4. **Remaining disagreements** (if stalemate): a `Point | Claude | Codex` table + a recommendation on which side to lean toward; if the user truly must decide → ask.
+   5. **Next steps**: a concrete action checklist to implement the decision.
+   6. **Risks / needs further verification**: what's uncertain, how to check.
+   7. **Consolidated sources** + **confidence** of the conclusion.
 
-### Bước cuối — Decision record (tùy chọn) + chain
+### Final step — Decision record (optional) + chain
 
-- **Decision record (tùy chọn, hỏi user)**: nếu là quyết định kiến trúc cần truy vết → ghi `docs/decisions/<slug>-<YYYY-MM-DD>.md` theo `references/decision-record.md`.
-- **Chain**: `analysis_brief.md` là đầu vào tự nhiên cho `ff-planning` (lập plan có phản biện). Nhắc user bước kế tiếp; nêu rõ đường dẫn brief.
+- **Decision record (optional, ask the user)**: if it's an architecture decision needing traceability → write `docs/decisions/<slug>-<YYYY-MM-DD>.md` per `references/decision-record.md`.
+- **Chain**: `analysis_brief.md` is the natural input for `ff-planning` (adversarially-reviewed planning). Remind the user of the next step; state the brief's path.
 
-## Vệ sinh context (compact có kiểm soát)
+## Context hygiene (controlled compact)
 
-Đừng bao giờ `/compact` trần. Sau khi gộp xong artifact ra đĩa, đề xuất một block compact **điền path thật, nói rõ GIỮ gì / BỎ gì**:
+Never run a bare `/compact`. After merging artifacts to disk, propose a compact block **with real paths filled in, explicit about what to KEEP / DROP**:
 
 ```
-/compact GIỮ: nội dung docs/features/<feature>/assessment.md (+ analysis_brief.md nếu có Stage 2),
-phát biểu vấn đề đã sắc hóa, ý định (chẩn đoán/giải pháp), quyết định + bất đồng còn lại.
-BỎ: 2 transcript debate của /codex-think-about, md phân tích từng bên, report deep-dive của sub-agent
-(đã tổng hợp vào artifact; diff/chi tiết còn ở file trên đĩa).
+/compact KEEP: contents of docs/features/<feature>/assessment.md (+ analysis_brief.md if Stage 2 ran),
+the sharpened problem statement, the intent (diagnosis/solution), the decision + remaining disagreements.
+DROP: the 2 /codex-think-about debate transcripts, each side's analysis md, sub-agent deep-dive reports
+(already synthesized into the artifacts; diffs/details remain in the files on disk).
 ```
 
-Cái gì **chưa** kịp ghi vào artifact → gắn cờ must-keep, đừng để compact nuốt mất.
+Anything **not yet** written into an artifact → flag as must-keep; don't let compact swallow it.
 
 ## Anti-patterns
 
-- ❌ Bỏ Bước 2, gọi thẳng Codex rồi ăn theo ý Codex (mất rào thông tin → mất giá trị phản biện).
-- ❌ Bỏ Blindspot Pass, debate chỉ quanh giả thuyết hiển nhiên (bỏ qua ẩn số → phản biện mất phân nửa giá trị).
-- ❌ Debate một phát biểu mơ hồ mà chưa neo từ vựng trước (hai bên giải hai bài khác nhau).
-- ❌ Nhảy thẳng sang giải pháp khi request chỉ đòi chẩn đoán (bỏ nhánh dừng ở Stage 1).
-- ❌ Đoán ý định khi mơ hồ thay vì `AskUserQuestion`.
-- ❌ Dừng ở "đây là những gì hai bên nói" mà không gộp thành artifact hành động được.
-- ❌ Nuốt toàn bộ file vào context main khi lẽ ra nên tỏa sub-agent trả report gọn (vấn đề lớn).
-- ❌ Tỏa sub-agent cho vấn đề nhỏ đã biết chỗ (over-engineer) — inline là đủ.
-- ❌ Tự viết lại giao thức gọi codex thay vì delegate `/codex-think-about`.
-- ❌ Ép consensus giả khi thật ra còn bất đồng — stalemate trung thực tốt hơn đồng thuận gượng.
-- ❌ Để Codex sửa file project mà không dừng theo File Modification Guard.
-- ❌ `/compact` trần làm mất assessment/brief chưa kịp ghi ra đĩa.
+- ❌ Skipping Step 2, calling Codex straight away and going along with Codex's view (breaks the information barrier → loses the value of the challenge).
+- ❌ Skipping the Blindspot Pass, debating only the obvious hypotheses (ignoring the unknowns → the debate loses half its value).
+- ❌ Debating a vague statement without anchoring the vocabulary first (the two sides solve two different problems).
+- ❌ Jumping straight to solutions when the request only asks for a diagnosis (skipping the Stage 1 stop branch).
+- ❌ Guessing intent when ambiguous instead of using `AskUserQuestion`.
+- ❌ Stopping at "here's what both sides said" without merging into an actionable artifact.
+- ❌ Swallowing whole files into main context when sub-agents returning tight reports should have been fanned out (large problem).
+- ❌ Fanning out sub-agents for a small problem with a known location (over-engineering) — inline is enough.
+- ❌ Rewriting the codex-calling protocol yourself instead of delegating to `/codex-think-about`.
+- ❌ Forcing fake consensus when real disagreement remains — an honest stalemate beats forced agreement.
+- ❌ Letting Codex modify project files without stopping per the File Modification Guard.
+- ❌ A bare `/compact` losing an assessment/brief not yet written to disk.

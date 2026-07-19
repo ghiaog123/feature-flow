@@ -1,49 +1,49 @@
 # Assessment — template (Stage 1)
 
-Chẩn đoán vấn đề, CHƯA bàn giải pháp. Ghi ra `docs/features/<feature>/assessment.md`. Đây là output khi request chỉ đòi phân tích/đánh giá, và là đầu vào cho Stage 2 khi đòi giải pháp.
+Problem diagnosis, NO solution talk yet. Write to `docs/features/<feature>/assessment.md`. This is the output when the request only asks for analysis/assessment, and the input for Stage 2 when a solution is requested.
 
 ```markdown
-# Assessment — <phát biểu vấn đề một câu>
+# Assessment — <one-sentence problem statement>
 
-- **Ngày**: <YYYY-MM-DD>
-- **Người tham gia**: Claude Code ⇄ Codex
-- **Trạng thái debate**: Consensus | Stalemate
-- **Ý định request**: Chỉ chẩn đoán | Chẩn đoán + giải pháp (→ Stage 2)
+- **Date**: <YYYY-MM-DD>
+- **Participants**: Claude Code ⇄ Codex
+- **Debate status**: Consensus | Stalemate
+- **Request intent**: Diagnosis only | Diagnosis + solution (→ Stage 2)
 
-## Phát biểu vấn đề (đã sắc hóa)
-<Một câu, rõ cái cần hiểu/quyết.>
+## Problem statement (sharpened)
+<One sentence, clear on what needs understanding/deciding.>
 
-## Bối cảnh & ràng buộc
-<Tiêu chí thành công, ràng buộc (stack/perf/deadline/không được đổi gì).>
+## Context & constraints
+<Success criteria, constraints (stack/perf/deadline/what may not change).>
 
-## Chẩn đoán
-<Bản chất vấn đề là gì. Nguyên nhân (root cause) nếu tìm được — kèm bằng chứng file:line.>
+## Diagnosis
+<What the problem's nature is. Root cause if found — with file:line evidence.>
 
-## Bằng chứng
-| Claim | Nguồn (file:line / URL + ngày) | Dữ kiện hay ý kiến |
+## Evidence
+| Claim | Source (file:line / URL + date) | Fact or opinion |
 |---|---|---|
 | | | |
 
-## Phân loại điểm debate
-- **Đồng thuận thật**: <...>
-- **Bất đồng thật**: <...>
-- **Insight riêng Claude**: <...>
-- **Insight riêng Codex**: <...>
-- **Cùng hướng khác độ sâu**: <...>
+## Debate point classification
+- **True consensus**: <...>
+- **True disagreement**: <...>
+- **Claude-only insight**: <...>
+- **Codex-only insight**: <...>
+- **Same direction, different depth**: <...>
 
-## Blindspots / Ẩn số chưa đóng
-Ẩn số nổi lên từ Blindspot Pass (Bước 2) — cái Claude CHƯA kiểm, giả định đang dựa vào — + trạng thái sau debate.
-| Ẩn số / giả định chưa kiểm | Độ tin cậy (Cao/TB/Thấp) | Cách đóng (đọc file / hỏi ai / test gì) | Trạng thái (đã đóng / còn mở) |
+## Blindspots / open unknowns
+Unknowns surfaced by the Blindspot Pass (Step 2) — what Claude has NOT verified, assumptions being relied on — + their status after the debate.
+| Unknown / unverified assumption | Confidence (High/Med/Low) | How to close (read file / ask whom / test what) | Status (closed / open) |
 |---|---|---|---|
 | | | | |
 
-## Bất đồng còn lại (nếu stalemate)
-| Điểm | Claude | Codex | Khuyến nghị nghiêng bên nào |
+## Remaining disagreements (if stalemate)
+| Point | Claude | Codex | Recommended lean |
 |---|---|---|---|
 
-## Rủi ro / vùng chưa chắc
-- <rủi ro> → kiểm bằng <cách>
+## Risks / uncertain areas
+- <risk> → verify via <method>
 
-## Độ tin cậy
-<Cao | Trung bình | Thấp> — <vì sao>
+## Confidence
+<High | Medium | Low> — <why>
 ```

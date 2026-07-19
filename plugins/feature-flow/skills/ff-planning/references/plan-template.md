@@ -1,58 +1,58 @@
 # Implementation Plan — template
 
-Ghi ra `docs/features/<feature>/implementation_plan.md`. Giữ heading `#`/`##` để `/codex-plan-review` bám cấu trúc.
+Write to `docs/features/<feature>/implementation_plan.md`. Keep `#`/`##` headings so `/codex-plan-review` can anchor on the structure.
 
-**Dependency contract** = các cột `Owns files` + `Depends on` + `Song song?` ở bảng "Các bước hiện thực". Đây là hợp đồng để `ff-implement` parallelize an toàn. Khai **honest**: chỉ đánh song song khi file disjoint VÀ không phụ thuộc; nghi thì để tuần tự.
+**Dependency contract** = the `Owns files` + `Depends on` + `Parallel?` columns in the "Implementation steps" table. This is the contract that lets `ff-implement` parallelize safely. Declare **honestly**: only mark parallel when files are disjoint AND there are no dependencies; in doubt, keep sequential.
 
 ```markdown
-# Implementation Plan — <tên feature/vấn đề>
+# Implementation Plan — <feature/problem name>
 
-## Mục tiêu / Outcomes
-<Cái gì coi là xong. Đây là nguồn để derive acceptance criteria — viết đo được.>
+## Goals / Outcomes
+<What counts as done. This is the source to derive acceptance criteria — write it measurable.>
 - [ ] <outcome 1>
 - [ ] <outcome 2>
 
-## Bối cảnh & quyết định
-<Tóm tắt quyết định đã chốt + lý do. Link brief/decision record nếu có:
+## Context & decision
+<Summary of the settled decision + rationale. Link brief/decision record if any:
 docs/features/<feature>/analysis_brief.md · docs/decisions/...>
 
-## Vùng tác động
-| File | Vai trò trong thay đổi này |
+## Impact area
+| File | Role in this change |
 |---|---|
-| `path/to/file.py:120` | <sửa gì> |
-| `path/to/other.py` | <thêm gì> |
+| `path/to/file.py:120` | <what changes> |
+| `path/to/other.py` | <what's added> |
 
-## Tham chiếu & gotchas
-<Chỉ khi hiện thực port/phỏng theo một tham chiếu (ngôn ngữ/thư viện/repo/prior art khác). Bỏ mục này nếu không có tham chiếu.>
-| Khía cạnh | Tham chiếu | Stack đích | Gotcha / khác biệt |
+## References & gotchas
+<Only when the implementation ports/adapts from a reference (another language/library/repo/prior art). Drop this section if there is no reference.>
+| Aspect | Reference | Target stack | Gotcha / difference |
 |---|---|---|---|
-| <hành vi/API> | <đoạn khớp / cách tham chiếu làm> | <cách stack này làm> | <chỗ KHÔNG chuyển 1:1: concurrency, bộ nhớ, timezone/locale, lỗi ngầm, thứ tự init...> |
+| <behavior/API> | <matching fragment / how the reference does it> | <how this stack does it> | <what does NOT transfer 1:1: concurrency, memory, timezone/locale, implicit errors, init order...> |
 
-## Các bước hiện thực
-> `Owns files` = file bước này sở hữu (được sửa). `Depends on` = bước phải xong trước.
-> Song song an toàn ⟺ Owns files disjoint VÀ không phụ thuộc lẫn nhau.
-> `Độ bất định` = cao/trung/thấp — bước dễ phải sửa lại nhất (kiến trúc, schema, giả định chưa kiểm chứng) để **cao**. Cờ này chỉ xếp **ưu tiên chú ý/review** (tweakable-first), KHÔNG đổi thứ tự chạy — thứ tự chạy vẫn theo `Depends on`. Nêu bước bất định cao lên đầu / cho nổi bật.
+## Implementation steps
+> `Owns files` = files this step owns (gets to modify). `Depends on` = steps that must finish first.
+> Safe to parallelize ⟺ Owns files are disjoint AND no mutual dependencies.
+> `Uncertainty` = high/medium/low — steps most likely to need rework (architecture, schema, unverified assumptions) get **high**. This flag only sets **attention/review priority** (tweakable-first), it does NOT change execution order — execution order still follows `Depends on`. Put high-uncertainty steps first / make them prominent.
 
-| # | Bước | Owns files | Depends on | Song song? | Độ bất định |
+| # | Step | Owns files | Depends on | Parallel? | Uncertainty |
 |---|---|---|---|---|---|
-| 0 | <contract-first: khóa type/signature/stub chung nếu có seam> | `path/shared.py` (types, stubs) | — | — | cao |
-| 1 | <làm gì cụ thể> | `path/a.py` | 0 | với 2 | trung |
-| 2 | <...> | `path/b.py` | 0 | với 1 | thấp |
-| 3 | <bước gom/integration> | `path/wire.py` | 1, 2 | — | thấp |
+| 0 | <contract-first: lock shared types/signatures/stubs if there is a seam> | `path/shared.py` (types, stubs) | — | — | high |
+| 1 | <what to do, concretely> | `path/a.py` | 0 | with 2 | medium |
+| 2 | <...> | `path/b.py` | 0 | with 1 | low |
+| 3 | <integration/assembly step> | `path/wire.py` | 1, 2 | — | low |
 
 ## Test & verify
-| Phần | Cách kiểm chứng | Tiêu chí pass |
+| Part | How to verify | Pass criteria |
 |---|---|---|
-| <bước/feature> | <unit/integration/manual> | <điều kiện> |
+| <step/feature> | <unit/integration/manual> | <condition> |
 
-## Rủi ro & rollback
-- **Rủi ro**: <điều dễ vỡ> → **Giảm thiểu**: <cách>
-- **Rollback**: <cách lùi nếu hỏng>
+## Risks & rollback
+- **Risk**: <what can break> → **Mitigation**: <how>
+- **Rollback**: <how to back out if it breaks>
 
-## Ngoài phạm vi
-- <chủ đích không làm lần này>
+## Out of scope
+- <deliberately not done this time>
 ```
 
-## Ghi chú về Phase 0 contract-first (cho plan lớn)
+## Note on Phase 0 contract-first (for large plans)
 
-Nếu nhiều bước cần chung một seam (kiểu dữ liệu, chữ ký hàm, interface, stub), thêm **Bước 0** khóa seam đó trước. Khi ấy các bước sau điền vào contract cố định → `ff-implement` cho chạy song song an toàn hơn (mỗi bước sở hữu file riêng, không giẫm lên seam chung).
+If multiple steps share a seam (data types, function signatures, interfaces, stubs), add a **Step 0** that locks that seam first. Later steps then fill in a fixed contract → `ff-implement` can parallelize more safely (each step owns its own files, nobody steps on the shared seam).

@@ -1,6 +1,6 @@
 ---
 name: ff-test-case-writer
-description: Generate interactive HTML test case documents in a standardized format with collapsible sections, pass/fail tracking, progress bar, localStorage persistence, and Markdown export. Derives the test plan from an ff-impl-status proposal (`docs/features/<feature>/proposal.html`) when one exists — mapping API surface + flows → sections, data-model changes → validation cases, risks → priority — otherwise falls back to interviewing the user or a feature/API description. Applies risk-based QA methodology (positive/negative/boundary, priority P0–P3, entry/exit criteria, regression tiers). Use this skill whenever the user asks to write, create, generate, or document test cases, test plans, test checklists, QA plans, or manual test scenarios, or to "write a test plan from the proposal" — even if they say "viết test case", "tạo test plan", "viết test plan từ proposal", "document test", "tạo checklist test", or similar. Always prefer this skill over generic HTML generation when test cases are involved.
+description: Generate interactive HTML test case documents in a standardized format with collapsible sections, pass/fail tracking, progress bar, localStorage persistence, and Markdown export. Derives the test plan from an ff-impl-status proposal (`docs/features/<feature>/proposal.html`) when one exists — mapping API surface + flows → sections, data-model changes → validation cases, risks → priority — otherwise falls back to interviewing the user or a feature/API description. Applies risk-based QA methodology (positive/negative/boundary, priority P0–P3, entry/exit criteria, regression tiers). Use this skill whenever the user asks to write, create, generate, or document test cases, test plans, test checklists, QA plans, or manual test scenarios, or to "write a test plan from the proposal" — even if they phrase it as "document tests", "make a test checklist", or similar. Always prefer this skill over generic HTML generation when test cases are involved.
 ---
 
 # Test Case Writer Skill
@@ -96,11 +96,11 @@ Before interviewing, check for a proposal produced by the `ff-impl-status` skill
 
    | proposal.html section | → test plan |
    |------------------------|-------------|
-   | `<h2>3. API surface</h2>` (Method/Path/Mô tả table) | one **section** (`Sx`) per endpoint or endpoint group |
-   | `<h2>4. Luồng chi tiết</h2>` (numbered steps per API) | **happy-path** cases following each step's expected outcome |
-   | `<h2>2. Thay đổi data model</h2>` (Layer/Thay đổi table) | **validation + boundary** cases (required/optional, null, type, length, constraint) for each changed field |
-   | `<h2>5. Đánh giá → Rủi ro</h2>` card | **negative/edge** cases; each risk drives a higher priority (a listed risk ⇒ `P0`/`P1`) |
-   | `<h2>6. Checklist triển khai</h2>` | a **smoke / regression** section covering each rollout item |
+   | `<h2>3. API surface</h2>` (Method/Path/Description table) | one **section** (`Sx`) per endpoint or endpoint group |
+   | `<h2>4. Detailed flows</h2>` (numbered steps per API) | **happy-path** cases following each step's expected outcome |
+   | `<h2>2. Data model changes</h2>` (Layer/Change table) | **validation + boundary** cases (required/optional, null, type, length, constraint) for each changed field |
+   | `<h2>5. Assessment → Risks</h2>` card | **negative/edge** cases; each risk drives a higher priority (a listed risk ⇒ `P0`/`P1`) |
+   | `<h2>6. Rollout checklist</h2>` | a **smoke / regression** section covering each rollout item |
 
 3. **Set `pri` from risk.** Default `P2`. Endpoint/flow named in a risk → `P0`. Core happy-path of a new endpoint → `P1`. Cosmetic/optional → `P3`.
 4. **Scope gate — agree scope in plain language BEFORE the deep pass.** This is the single scope-confirmation point. Do it now, after you have a candidate scope from the proposal but *before* reading code / authoring cases — so you don't deep-pass areas the user then trims. See "Scope gate" below.
@@ -137,7 +137,7 @@ One scope-confirmation point. Runs after you have a candidate scope (from the pr
 
 Use `AskUserQuestion` to make this fast: a multiSelect on the candidate areas (which to keep in scope) plus a single-select depth choice. Let the user trim, add, or move items to out-of-scope. **Do not start the deep pass until the user confirms.**
 
-**2. Write the agreed scope into a living HTML doc.** The moment scope is locked, write it as the **top** of the output HTML file (the `.scope-doc` block — see template): in-scope list, out-of-scope list, depth, environment/data, and a "Chốt scope lúc …" line. This file is the single living document — the test plan sections get appended **below** this scope block in step 6, same file. So the reader sees *what was agreed* first, then *the cases that realize it*. If scope changes later, update the scope block in place and reconcile the sections beneath it.
+**2. Write the agreed scope into a living HTML doc.** The moment scope is locked, write it as the **top** of the output HTML file (the `.scope-doc` block — see template): in-scope list, out-of-scope list, depth, environment/data, and a "Scope locked at …" line. This file is the single living document — the test plan sections get appended **below** this scope block in step 6, same file. So the reader sees *what was agreed* first, then *the cases that realize it*. If scope changes later, update the scope block in place and reconcile the sections beneath it.
 
 ### Test Design Methodology (apply when deriving cases)
 
@@ -181,7 +181,7 @@ Use this template verbatim, replacing only the marked placeholders:
 
 ```html
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -419,8 +419,8 @@ Use this template verbatim, replacing only the marked placeholders:
   <div class="stat pass"><span class="num" id="stat-pass">0</span> passed</div>
   <div class="stat fail"><span class="num" id="stat-fail">0</span> failed</div>
   <div class="actions">
-    <button class="btn-export" onclick="exportReport()">Export báo cáo</button>
-    <button class="btn-reset" onclick="resetAll()">Reset tất cả</button>
+    <button class="btn-export" onclick="exportReport()">Export report</button>
+    <button class="btn-reset" onclick="resetAll()">Reset all</button>
   </div>
 </div>
 
@@ -532,7 +532,7 @@ function renderSection(sec) {
         <div class="tc-expect"><strong>Expect:</strong> ${tc.expect}</div>
         ${oracleHtml(tc)}
         <div class="tc-note-wrap">
-          <textarea class="tc-note" placeholder="Ghi chú / lỗi gặp phải..."
+          <textarea class="tc-note" placeholder="Notes / issues encountered..."
             oninput="onNote('${tc.id}', this.value)">${s.note || ''}</textarea>
         </div>
       </div>
@@ -605,7 +605,7 @@ function updateStats() {
 }
 
 function resetAll() {
-  if (!confirm('Reset toàn bộ kết quả test? Không thể hoàn tác.')) return;
+  if (!confirm('Reset all test results? This cannot be undone.')) return;
   state = {};
   saveState();
   location.reload();
@@ -619,15 +619,15 @@ function exportReport() {
   const todo = total - pass - fail;
 
   let md = `# {{SERVICE_NAME}} — {{PHASE_LABEL}} Test Report\n`;
-  md += `Date: ${new Date().toLocaleString('vi-VN')}\n\n`;
+  md += `Date: ${new Date().toLocaleString('en-US')}\n\n`;
   if (scope && (scope.inScope?.length || scope.outScope?.length)) {
-    md += `## Phạm vi test (scope)\n`;
+    md += `## Test scope\n`;
     if (scope.depth) md += `Depth: **${scope.depth}**`;
-    if (scope.locked) md += `${scope.depth ? ' · ' : ''}Chốt scope: ${scope.locked}`;
+    if (scope.locked) md += `${scope.depth ? ' · ' : ''}Scope locked: ${scope.locked}`;
     md += `\n\n`;
-    if (scope.inScope?.length) md += `**Trong phạm vi:**\n${scope.inScope.map(x => `- ${x}`).join('\n')}\n\n`;
-    if (scope.outScope?.length) md += `**Ngoài phạm vi:**\n${scope.outScope.map(x => `- ${x}`).join('\n')}\n\n`;
-    if (scope.env) md += `**Môi trường / dữ liệu:** ${scope.env}\n\n`;
+    if (scope.inScope?.length) md += `**In scope:**\n${scope.inScope.map(x => `- ${x}`).join('\n')}\n\n`;
+    if (scope.outScope?.length) md += `**Out of scope:**\n${scope.outScope.map(x => `- ${x}`).join('\n')}\n\n`;
+    if (scope.env) md += `**Environment / data:** ${scope.env}\n\n`;
   }
   md += `| | Count |\n|---|---|\n`;
   md += `| Total | ${total} |\n| Pass | ${pass} |\n| Fail | ${fail} |\n| TODO | ${todo} |\n\n`;
@@ -654,15 +654,15 @@ function renderScope() {
   if (!scope || (!scope.inScope?.length && !scope.outScope?.length)) return;
   const li = arr => (arr || []).map(x => `<li>${x}</li>`).join('');
   const depth = scope.depth ? `<span class="scope-depth">${scope.depth.toUpperCase()}</span>` : '';
-  const locked = scope.locked ? `<span class="scope-locked">Chốt scope: ${scope.locked}</span>` : '';
+  const locked = scope.locked ? `<span class="scope-locked">Scope locked: ${scope.locked}</span>` : '';
   const div = document.createElement('div');
   div.className = 'scope-doc';
   div.innerHTML = `
-    <div class="scope-head"><h2>Phạm vi test (scope)</h2>${depth}${locked}</div>
+    <div class="scope-head"><h2>Test scope</h2>${depth}${locked}</div>
     <div class="scope-body">
-      ${scope.inScope?.length ? `<h3>✅ Trong phạm vi</h3><ul class="scope-in">${li(scope.inScope)}</ul>` : ''}
-      ${scope.outScope?.length ? `<h3>🚫 Ngoài phạm vi</h3><ul class="scope-out">${li(scope.outScope)}</ul>` : ''}
-      ${scope.env ? `<div class="scope-meta"><strong>Môi trường / dữ liệu:</strong> ${scope.env}</div>` : ''}
+      ${scope.inScope?.length ? `<h3>✅ In scope</h3><ul class="scope-in">${li(scope.inScope)}</ul>` : ''}
+      ${scope.outScope?.length ? `<h3>🚫 Out of scope</h3><ul class="scope-out">${li(scope.outScope)}</ul>` : ''}
+      ${scope.env ? `<div class="scope-meta"><strong>Environment / data:</strong> ${scope.env}</div>` : ''}
     </div>
   `;
   return div;

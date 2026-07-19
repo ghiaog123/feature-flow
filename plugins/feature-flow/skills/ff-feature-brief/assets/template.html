@@ -1,15 +1,15 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="en">
 <!--
-  FEATURE BRIEF TEMPLATE — dùng bởi skill ff-feature-brief.
-  Cách dùng: copy file này → docs/features/<feature>/feature_brief.html, điền các vùng <!- - FILL - ->.
-  Khối nào không áp dụng (vd chưa test) → xóa cả <section>.
-  Ngôn ngữ: theo ngôn ngữ user (đổi lang attribute + toàn bộ text).
+  FEATURE BRIEF TEMPLATE — used by the ff-feature-brief skill.
+  Usage: copy this file → docs/features/<feature>/feature_brief.html, fill in the <!- - FILL - -> areas.
+  Any block that does not apply (e.g. not tested yet) → delete the whole <section>.
+  Language: follow the user's language (change the lang attribute + all text).
 -->
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Feature Brief — <!-- FILL: tên feature dễ hiểu --></title>
+<title>Feature Brief — <!-- FILL: plain-language feature name --></title>
 <style>
   :root {
     --bg: #FAFAF9; --surface: #FFFFFF; --surface-2: #F8FAFC;
@@ -50,19 +50,19 @@
   td { padding: 8px 12px; border: 1px solid var(--border); vertical-align: top; color: var(--text-soft); }
   code { background: var(--surface-2); border: 1px solid var(--border); border-radius: 4px; padding: 1px 5px; font-size: 12px; font-family: 'SF Mono', Menlo, monospace; color: var(--text); }
 
-  /* Box ví dụ / hình dung nhanh (nền vàng nhạt) */
+  /* Example / quick-visual box (light amber background) */
   .example { background: var(--amber-bg); border: 1px solid #fde68a; border-radius: 8px; padding: 12px 16px; font-size: 13px; color: #78350f; margin: 10px 0; }
   .example .extitle { font-weight: 700; margin-bottom: 4px; }
 
-  /* Hình vẽ phép tính quyền/điều kiện: dãy ô + toán tử */
+  /* Visual for permission/condition arithmetic: row of boxes + operators */
   .calc { display: flex; gap: 10px; flex-wrap: wrap; align-items: stretch; margin: 12px 0; }
   .calc .step { flex: 1; min-width: 180px; border-radius: 10px; padding: 12px 14px; font-size: 12.5px; border: 1px solid var(--border); background: var(--surface-2); }
   .calc .step .t { font-weight: 700; font-size: 12px; margin-bottom: 6px; color: var(--text); }
   .calc .op { display: flex; align-items: center; font-size: 20px; font-weight: 800; color: var(--text-muted); }
   .chip { display: inline-block; font-size: 11.5px; font-weight: 600; padding: 2px 8px; border-radius: 10px; margin: 2px 3px 2px 0; }
-  .ch-on { background: #dcfce7; color: #15803d; }                          /* được phép */
-  .ch-off { background: #fee2e2; color: #991b1b; text-decoration: line-through; }  /* bị tắt */
-  .ch-na { background: #e5e7eb; color: #6b7280; text-decoration: line-through; }   /* không áp dụng */
+  .ch-on { background: #dcfce7; color: #15803d; }                          /* allowed */
+  .ch-off { background: #fee2e2; color: #991b1b; text-decoration: line-through; }  /* turned off */
+  .ch-na { background: #e5e7eb; color: #6b7280; text-decoration: line-through; }   /* not applicable */
   .calc .result { border: 2px solid var(--green); background: var(--green-bg); }
 
   /* Acceptance criteria */
@@ -71,7 +71,7 @@
   .ac b.g { color: var(--text-muted); font-weight: 700; }
   .ac .exline { margin-top: 5px; font-size: 12.5px; color: #92400e; }
 
-  /* Card kết quả test */
+  /* Test-result card */
   .verdict { display: flex; gap: 14px; flex-wrap: wrap; margin: 10px 0; }
   .vcard { flex: 1; min-width: 140px; border-radius: 10px; padding: 14px; text-align: center; border: 1px solid var(--border); }
   .vcard .big { font-size: 26px; font-weight: 800; }
@@ -100,10 +100,10 @@
 <body>
 
 <header>
-  <h1>Feature Brief — <!-- FILL: tên feature, ngôn ngữ đời thường --></h1>
-  <div class="sub"><!-- FILL: repo · mã feature · "1 trang cho PO & QC" · ngày --></div>
+  <h1>Feature Brief — <!-- FILL: feature name, everyday language --></h1>
+  <div class="sub"><!-- FILL: repo · feature code · "1 page for PO & QC" · date --></div>
   <div class="badges">
-    <!-- FILL: 2-4 badge trạng thái. Classes: hb-green (test đạt), hb-blue (code), hb-amber (chưa bật/chờ), hb-red (blocker) -->
+    <!-- FILL: 2-4 status badges. Classes: hb-green (tests pass), hb-blue (code), hb-amber (not enabled / pending), hb-red (blocker) -->
     <span class="hbadge hb-green">TEST: …</span>
     <span class="hbadge hb-blue">Code: …</span>
     <span class="hbadge hb-amber">…</span>
@@ -112,126 +112,126 @@
 
 <main>
 
-<!-- ════════ 0. TÓM TẮT 30 GIÂY (cả hai) ════════ -->
+<!-- ════════ 0. 30-SECOND SUMMARY (both) ════════ -->
 <section>
-  <h2>📌 Tóm tắt 30 giây</h2>
-  <p><!-- FILL: 2-3 câu: hệ thống làm gì, trước đây thiếu gì, feature này thêm gì. KHÔNG thuật ngữ. --></p>
+  <h2>📌 30-second summary</h2>
+  <p><!-- FILL: 2-3 sentences: what the system does, what was missing before, what this feature adds. NO jargon. --></p>
   <div class="example">
-    <div class="extitle">🏢 Hình dung nhanh</div>
-    <!-- FILL: ẩn dụ khung (tòa nhà/thẻ ra vào, bưu điện…) kể qua nhân vật cụ thể. Ẩn dụ này dùng nhất quán cả trang. -->
+    <div class="extitle">🏢 Quick mental picture</div>
+    <!-- FILL: framing metaphor (building/access badge, post office…) told through a concrete character. Use this metaphor consistently across the page. -->
   </div>
 </section>
 
-<!-- ════════ 1. CÓ GÌ THAY ĐỔI (cả hai) ════════ -->
+<!-- ════════ 1. WHAT CHANGED (both) ════════ -->
 <section>
-  <h2><span class="num">1</span> Có gì thay đổi — Trước vs Sau <span class="audience aud-both">PO + QC</span></h2>
+  <h2><span class="num">1</span> What changed — Before vs After <span class="audience aud-both">PO + QC</span></h2>
   <table>
-    <tr><th style="width:24%"></th><th style="width:38%">Trước</th><th>Sau</th></tr>
-    <!-- FILL: 3-5 hàng khác biệt lớn nhất, mỗi ô 1-2 câu đời thường -->
+    <tr><th style="width:24%"></th><th style="width:38%">Before</th><th>After</th></tr>
+    <!-- FILL: 3-5 rows of the biggest differences, each cell 1-2 everyday-language sentences -->
     <tr><td><b>…</b></td><td>…</td><td>…</td></tr>
   </table>
 
-  <!-- OPTIONAL: nếu có công thức quyền/điều kiện nhiều vế → vẽ phép tính bằng chips thay vì viết công thức -->
-  <h3>Công thức … — minh họa bằng ví dụ</h3>
+  <!-- OPTIONAL: if there is a multi-part permission/condition formula → draw the arithmetic with chips instead of writing a formula -->
+  <h3>Formula … — illustrated with an example</h3>
   <div class="calc">
     <div class="step"><div class="t">① …</div><span class="chip ch-on">…</span></div>
     <div class="op">∩</div>
-    <div class="step"><div class="t">② …</div><span class="chip ch-on">…</span><span class="chip ch-na">… (không áp dụng)</span></div>
+    <div class="step"><div class="t">② …</div><span class="chip ch-on">…</span><span class="chip ch-na">… (not applicable)</span></div>
     <div class="op">−</div>
     <div class="step"><div class="t">③ …</div><span class="chip ch-off">…</span></div>
     <div class="op">=</div>
-    <div class="step result"><div class="t">✅ Kết quả</div><span class="chip ch-on">…</span></div>
+    <div class="step result"><div class="t">✅ Result</div><span class="chip ch-on">…</span></div>
   </div>
-  <p style="font-size:12.5px; color:var(--text-muted)"><!-- FILL: 1 câu "quy tắc vàng" --></p>
+  <p style="font-size:12.5px; color:var(--text-muted)"><!-- FILL: 1 "golden rule" sentence --></p>
 </section>
 
-<!-- ════════ 2. VÌ SAO CẦN (PO) ════════ -->
+<!-- ════════ 2. WHY IT'S NEEDED (PO) ════════ -->
 <section>
-  <h2><span class="num">2</span> Vì sao cần <span class="audience aud-po">PO</span></h2>
+  <h2><span class="num">2</span> Why it's needed <span class="audience aud-po">PO</span></h2>
   <ul class="tight">
-    <!-- FILL: 2-3 gạch đầu dòng business: bối cảnh, giá trị, rủi ro nếu không làm -->
+    <!-- FILL: 2-3 business bullets: context, value, risk of not doing it -->
     <li><b>…</b> …</li>
   </ul>
 </section>
 
-<!-- ════════ 3. LUỒNG HOẠT ĐỘNG (cả hai) ════════ -->
+<!-- ════════ 3. HOW IT WORKS (both) ════════ -->
 <section>
-  <h2><span class="num">3</span> Luồng hoạt động <span class="audience aud-both">PO + QC</span></h2>
+  <h2><span class="num">3</span> How it works <span class="audience aud-both">PO + QC</span></h2>
 
-  <h3>3a. Nhìn theo nghiệp vụ (cho PO)</h3>
-  <p><!-- FILL: 1 câu dẫn: luồng đi qua mấy chốt, sai ở đâu thì sao --></p>
+  <h3>3a. Business view (for PO)</h3>
+  <p><!-- FILL: 1 lead-in sentence: how many checkpoints the flow passes, what happens on failure --></p>
   <div class="mermaid">
 flowchart LR
-  %% FILL: swimlane kể chuyện nhân vật. Subgraph = lane. KHÔNG thuật ngữ.
-  %% Pattern: nhân vật hỏi → hệ thống nhận diện + phát thẻ → chốt kiểm soát → ✅ / ⛔
-  subgraph U["👤 Nhân vật"]
+  %% FILL: swimlane telling a character's story. Subgraph = lane. NO jargon.
+  %% Pattern: character asks → system identifies + issues a badge → checkpoint → ✅ / ⛔
+  subgraph U["👤 Character"]
     A1["…"]
   end
-  subgraph B["Hệ thống"]
+  subgraph B["System"]
     B1["…"]
   end
-  subgraph R["Kết quả"]
+  subgraph R["Outcome"]
     R1["✅ …"]
     R2["⛔ …"]
   end
   A1 --> B1 --> R1
-  B1 -. "sai" .-> R2
+  B1 -. "invalid" .-> R2
   </div>
 
-  <h3>3b. Sequence diagram kỹ thuật (cho QC)</h3>
+  <h3>3b. Technical sequence diagram (for QC)</h3>
   <div class="mermaid">
 sequenceDiagram
   autonumber
-  %% FILL: giữ chi tiết kỹ thuật (token, check, log, mã lỗi) nhưng label dễ đọc.
-  %% Dùng alt/else cho nhánh thành công vs từ chối. Ghi rõ hành vi kết thúc (vd [DONE]).
+  %% FILL: keep technical detail (token, check, log, error codes) but with readable labels.
+  %% Use alt/else for success vs rejection branches. State the terminal behavior clearly (e.g. [DONE]).
   participant A as …
   participant B as …
   A->>B: …
-  alt sai / không hợp lệ
-    B-->>A: từ chối + ghi log
-  else hợp lệ
+  alt wrong / invalid
+    B-->>A: reject + log
+  else valid
     B-->>A: …
   end
   </div>
 </section>
 
-<!-- ════════ 4. TIÊU CHÍ NGHIỆM THU (QC) ════════ -->
+<!-- ════════ 4. ACCEPTANCE CRITERIA (QC) ════════ -->
 <section>
-  <h2><span class="num">4</span> Tiêu chí nghiệm thu (kèm ví dụ) <span class="audience aud-qc">QC</span></h2>
-  <!-- FILL: 5-8 AC. Phủ: happy path, từ chối khi sai, ranh giới quyền, thu hồi/thay đổi, lỗi giữa chừng, cách ly dữ liệu.
-       Mỗi AC: tên ngắn gọn + Nếu/Khi/Thì + 1 dòng 💡 ví dụ cụ thể (nhân vật, thời gian, số liệu). -->
-  <div class="ac"><span class="acid">AC-1 · Tên ngắn</span><br>
-    <b class="g">Nếu</b> … · <b class="g">Khi</b> … · <b class="g">Thì</b> …
-    <div class="exline">💡 Ví dụ: …</div>
+  <h2><span class="num">4</span> Acceptance criteria (with examples) <span class="audience aud-qc">QC</span></h2>
+  <!-- FILL: 5-8 AC. Cover: happy path, rejection on invalid input, permission boundaries, revocation/changes, mid-flow failures, data isolation.
+       Each AC: short name + Given/When/Then + one 💡 concrete example line (character, time, numbers). -->
+  <div class="ac"><span class="acid">AC-1 · Short name</span><br>
+    <b class="g">Given</b> … · <b class="g">When</b> … · <b class="g">Then</b> …
+    <div class="exline">💡 Example: …</div>
   </div>
 </section>
 
-<!-- ════════ 5. KẾT QUẢ TEST (cả hai) — XÓA nếu chưa test, hoặc ghi rõ "chưa test" ════════ -->
+<!-- ════════ 5. TEST RESULTS (both) — DELETE if not tested yet, or state "not tested" clearly ════════ -->
 <section>
-  <h2><span class="num">5</span> Kết quả test <span class="audience aud-both">PO + QC</span></h2>
+  <h2><span class="num">5</span> Test results <span class="audience aud-both">PO + QC</span></h2>
   <div class="verdict">
-    <!-- FILL: số liệu THẬT từ test plan — không bịa -->
-    <div class="vcard v-pass"><div class="big">…</div><div class="lbl">ĐẠT / … case</div></div>
-    <div class="vcard v-skip"><div class="big">…</div><div class="lbl">CHƯA TEST (lý do mục 6)</div></div>
-    <div class="vcard v-fail"><div class="big">…</div><div class="lbl">LỖI</div></div>
+    <!-- FILL: REAL numbers from the test plan — do not make them up -->
+    <div class="vcard v-pass"><div class="big">…</div><div class="lbl">PASSED / … cases</div></div>
+    <div class="vcard v-skip"><div class="big">…</div><div class="lbl">NOT TESTED (reasons in section 6)</div></div>
+    <div class="vcard v-fail"><div class="big">…</div><div class="lbl">FAILED</div></div>
   </div>
-  <div class="callout co-green"><b>Kết luận: …</b> — <!-- FILL: verdict + test trên môi trường nào (thật/giả lập) --></div>
-  <!-- OPTIONAL: bug tìm được nhờ test = giá trị, nêu bằng ngôn ngữ hậu quả người dùng -->
-  <div class="callout co-blue"><b>Giá trị thêm từ đợt test:</b> …</div>
-  <p class="links">Chi tiết: <a href="test_plan_….html">test plan</a> · <a href="proposal.html">thiết kế kỹ thuật</a> · <a href="implementation_status.html">tiến độ code</a></p>
+  <div class="callout co-green"><b>Conclusion: …</b> — <!-- FILL: verdict + which environment it was tested on (real/simulated) --></div>
+  <!-- OPTIONAL: bugs found through testing = value; phrase them in terms of user-facing consequences -->
+  <div class="callout co-blue"><b>Extra value from this test round:</b> …</div>
+  <p class="links">Details: <a href="test_plan_….html">test plan</a> · <a href="proposal.html">technical design</a> · <a href="implementation_status.html">code progress</a></p>
 </section>
 
-<!-- ════════ 6. NGOÀI PHẠM VI & VIỆC CÒN LẠI (cả hai) — XÓA nếu không có ════════ -->
+<!-- ════════ 6. OUT OF SCOPE & REMAINING WORK (both) — DELETE if none ════════ -->
 <section>
-  <h2><span class="num">6</span> Ngoài phạm vi &amp; việc còn lại <span class="audience aud-both">PO + QC</span></h2>
+  <h2><span class="num">6</span> Out of scope &amp; remaining work <span class="audience aud-both">PO + QC</span></h2>
 
-  <h3>Không nằm trong đợt này (chủ đích, làm sau)</h3>
+  <h3>Not in this round (deliberate, for later)</h3>
   <ul class="tight"><li>…</li></ul>
 
-  <h3>Case chưa test — lý do (1 dòng/nhóm)</h3>
-  <ul class="tight"><li><b>… case</b> vì …</li></ul>
+  <h3>Untested cases — reasons (1 line/group)</h3>
+  <ul class="tight"><li><b>… cases</b> because …</li></ul>
 
-  <h3>✅ Checklist trước khi bật tính năng</h3>
+  <h3>✅ Checklist before enabling the feature</h3>
   <ul class="tight"><li>…</li></ul>
 </section>
 

@@ -1,102 +1,102 @@
 ---
 name: ff-api-contract-writer
-description: "Đọc source code của một repo/service và viết API contract dạng Markdown ngắn gọn, chỉ chứa những gì caller cần biết. Dùng skill này bất cứ khi nào user gọi `/ff-api-contract-writer`, hoặc nói các cụm như 'viết api docs', 'tạo api contract', 'document endpoints', 'viết tài liệu api', 'list các endpoint trong service X' — ngay cả khi user không nói rõ chữ 'skill'. Hoạt động bán-tự-động — liệt kê endpoint tìm được, chờ user xác nhận phạm vi, rồi mới sinh contract chi tiết."
+description: "Read the source code of a repo/service and write a concise Markdown API contract containing only what a caller needs to know. Use this skill whenever the user calls `/ff-api-contract-writer`, or says phrases like 'write api docs', 'create an api contract', 'document endpoints', 'list the endpoints in service X' — even when the user doesn't explicitly say the word 'skill'. Operates semi-automatically — lists the endpoints found, waits for the user to confirm scope, and only then generates the detailed contract."
 ---
 
 # API Contract Writer
 
-Tạo tài liệu API contract cho một service/module, output là file Markdown theo format ở `references/contract-format.md`.
+Create API contract documentation for a service/module; the output is a Markdown file following the format in `references/contract-format.md`.
 
-**Triết lý**: contract mô tả những gì **caller quan sát được** — request shape, response shape, status codes, điều kiện lỗi. Không phải tài liệu thiết kế hệ thống. Người đọc là dev tích hợp với API, không phải dev maintain service.
+**Philosophy**: the contract describes what the **caller can observe** — request shape, response shape, status codes, error conditions. It is not a system design document. The reader is a dev integrating with the API, not a dev maintaining the service.
 
-## Ngôn ngữ
+## Language
 
-Mặc định tiếng Việt (mô tả, ghi chú); tên field/path/code giữ tiếng Anh. Nếu user yêu cầu ngôn ngữ khác (hoặc đang trao đổi bằng ngôn ngữ khác), viết theo ngôn ngữ đó.
+Default to English (descriptions, notes, field names, paths). If the user requests another language (or is conversing in another language), write descriptions/notes in that language; field names/paths/code stay in English.
 
-## Workflow bán-tự-động (theo đúng thứ tự)
+## Semi-automatic workflow (follow this exact order)
 
-User chọn workflow này vì muốn **xác nhận scope trước khi viết chi tiết** — không tự ý sinh contract cho toàn bộ repo.
+The user chose this workflow because they want to **confirm scope before detailed writing** — do not generate a contract for the whole repo on your own.
 
-### Bước 1 — Làm rõ phạm vi
+### Step 1 — Clarify scope
 
-Nếu user chưa chỉ rõ service/module/folder, hỏi ngắn gọn:
-- Service/module nào?
-- Giới hạn router/file cụ thể không?
-- File output đặt ở đâu? (mặc định gợi ý: `<service>/docs/api-contract.md`)
+If the user hasn't specified the service/module/folder, ask briefly:
+- Which service/module?
+- Restrict to a specific router/file?
+- Where should the output file go? (default suggestion: `<service>/docs/api-contract.md`)
 
-Nếu user đã chỉ rõ, bỏ qua.
+If the user has already specified, skip this.
 
-### Bước 2 — Quét và liệt kê endpoint
+### Step 2 — Scan and list endpoints
 
-Tìm tất cả HTTP endpoints trong scope. Phát hiện theo framework:
+Find all HTTP endpoints in scope. Detect by framework:
 
-- **FastAPI / Starlette**: `@app.<method>`, `@router.<method>` (`get/post/put/patch/delete`), kết hợp `prefix=` của router để dựng full path.
+- **FastAPI / Starlette**: `@app.<method>`, `@router.<method>` (`get/post/put/patch/delete`), combined with the router's `prefix=` to build the full path.
 - **Flask**: `@app.route(..., methods=[...])`, `@blueprint.route(...)`.
 - **Express**: `app.<method>()`, `router.<method>()`.
 - **Spring Boot**: `@GetMapping`, `@PostMapping`, `@RequestMapping`.
-- **NestJS**: `@Get/@Post/@Put/@Delete` trong controller.
-- Repo có `openapi.json` / `openapi.yaml` → ưu tiên đọc file đó.
+- **NestJS**: `@Get/@Post/@Put/@Delete` in controllers.
+- Repo has `openapi.json` / `openapi.yaml` → prefer reading that file.
 
-Trình bảng tóm tắt:
+Present a summary table:
 
 ```
-Tìm thấy N endpoints trong <scope>:
+Found N endpoints in <scope>:
 
 | # | Method | Path                    | Handler          |
 |---|--------|-------------------------|------------------|
 | 1 | POST   | /api/v1/items           | items.create     |
 | ...
 
-Bạn muốn viết contract cho tất cả, hay chỉ một số endpoint?
+Do you want the contract for all of them, or only some endpoints?
 ```
 
-**DỪNG LẠI chờ user xác nhận.** Không tự viết tiếp.
+**STOP and wait for user confirmation.** Do not continue writing on your own.
 
-### Bước 3 — Đọc chi tiết và viết contract
+### Step 3 — Read details and write the contract
 
-Với mỗi endpoint đã chốt:
+For each confirmed endpoint:
 
-1. Đọc handler: parameters, request/response models (Pydantic/DTO), exceptions, auth dependencies.
-2. Truy ngược schema được tham chiếu.
-3. Phát hiện auth (dependency, middleware, decorator).
-4. Phát hiện error responses thực sự có thể trả (`HTTPException`, exception handlers).
+1. Read the handler: parameters, request/response models (Pydantic/DTO), exceptions, auth dependencies.
+2. Trace back any referenced schemas.
+3. Detect auth (dependency, middleware, decorator).
+4. Detect error responses that can actually be returned (`HTTPException`, exception handlers).
 
-Viết theo format ở `references/contract-format.md` — không sáng tạo cấu trúc khác.
+Write following the format in `references/contract-format.md` — do not invent a different structure.
 
-### Bước 4 — Lưu và báo cáo
+### Step 4 — Save and report
 
-Ghi file vào path đã thống nhất. Báo cáo: số endpoint đã document + các điểm không suy luận được từ code (để user bổ sung tay).
+Write the file to the agreed path. Report: number of endpoints documented + anything that could not be inferred from the code (for the user to fill in manually).
 
-## Nguyên tắc nội dung
+## Content principles
 
-**Contract, không phải implementation.** Mô tả chỉ chứa behavior caller thấy được: idempotency, điều kiện trả từng status code, default values, giới hạn (max items, độ dài). KHÔNG nhắc tên công nghệ nội bộ (loại DB, message queue, cache, tên lock key, tên background job) — caller không cần và nó lộ chi tiết hệ thống. Ví dụ:
+**Contract, not implementation.** Descriptions contain only behavior the caller can see: idempotency, conditions for each status code, default values, limits (max items, lengths). Do NOT mention internal technology names (DB type, message queue, cache, lock key names, background job names) — the caller doesn't need them and it leaks system details. Example:
 
-- ❌ "Dùng Redis lock chống upsert đồng thời, enqueue ARQ job `ingest_file`"
-- ✅ "Upsert đồng thời cùng `(user_id, file_id)` → `409`. Nếu job xử lý trước đó còn đang chạy, trả thông tin job đó (`dedup_hit=true`)"
+- ❌ "Uses a Redis lock to prevent concurrent upserts, enqueues ARQ job `ingest_file`"
+- ✅ "Concurrent upsert with the same `(user_id, file_id)` → `409`. If a previous processing job is still running, returns that job's info (`dedup_hit=true`)"
 
-**Không dư thừa.**
-- Endpoint không có path params / query params / body → **bỏ hẳn section đó**, không ghi placeholder "Không có".
-- Lỗi chung toàn service (sai API key, validation schema mặc định của framework) → chỉ ghi **một lần ở Phụ lục** cuối file. Từng endpoint chỉ liệt kê lỗi đặc thù của nó (404, 409, 422 nghiệp vụ riêng).
-- Mô tả endpoint: 1–3 câu. Đủ để hiểu khi nào gọi và nhận gì về.
+**No filler.**
+- Endpoint has no path params / query params / body → **omit that section entirely**, don't write a "None" placeholder.
+- Errors common to the whole service (wrong API key, the framework's default schema validation) → document them **once in the Appendix** at the end of the file. Each endpoint only lists its own specific errors (endpoint-specific 404, 409, 422 business errors).
+- Endpoint description: 1–3 sentences. Enough to understand when to call it and what comes back.
 
-**Suy luận từ code, không bịa.** Không xác định được:
-- Kiểu field → ghi `unknown` + note `_(cần xác nhận)_`.
-- Status code → chỉ liệt kê những gì code thực sự raise/return.
-- Mô tả nghiệp vụ → đọc docstring/comment; không có thì mô tả ngắn theo tên handler, không sáng tác.
+**Infer from code, don't invent.** If undeterminable:
+- Field type → write `unknown` + note `_(needs confirmation)_`.
+- Status code → only list what the code actually raises/returns.
+- Business description → read docstrings/comments; if none, describe briefly from the handler name, don't make it up.
 
-**Ưu tiên schema thật.** Body là model class → đọc model, liệt kê từng field với type, required, default, description.
+**Prefer real schemas.** Body is a model class → read the model, list every field with type, required, default, description.
 
-**Generic.** Không đưa tên công ty/tổ chức, URL nội bộ thật, hay thông tin môi trường cụ thể vào contract — base URL dùng placeholder (`http://localhost:<port>` hoặc `https://api.example.com`) trừ khi user yêu cầu khác.
+**Generic.** Do not put company/organization names, real internal URLs, or environment-specific information into the contract — the base URL uses a placeholder (`http://localhost:<port>` or `https://api.example.com`) unless the user requests otherwise.
 
-**Auth kế thừa.** Auth apply ở mức router → ghi một lần ở header file ("Tất cả endpoints yêu cầu ... trừ ghi chú khác"); từng endpoint chỉ ghi khi **khác mặc định**.
+**Inherited auth.** Auth applied at the router level → state it once in the file header ("All endpoints require ... unless noted otherwise"); individual endpoints only mention auth when it **differs from the default**.
 
-## Format output
+## Output format
 
-Đọc `references/contract-format.md` trước khi viết. Tóm tắt:
+Read `references/contract-format.md` before writing. Summary:
 
-1. **Header**: tên service, base URL (placeholder), auth chung.
-2. **Mục lục**: bảng Method / Path / Mô tả ngắn, link anchor.
-3. **Mỗi endpoint**: heading `## <số>. \`<METHOD> <path>\`` → Mô tả → Request (chỉ các bảng có nội dung) → Ví dụ curl → Response (mỗi status một sub-section, schema bảng khi field cần giải thích) → lỗi đặc thù.
-4. **Phụ lục**: bảng lỗi chung toàn service.
+1. **Header**: service name, base URL (placeholder), common auth.
+2. **Table of contents**: Method / Path / short description table, with anchor links.
+3. **Each endpoint**: heading `## <number>. \`<METHOD> <path>\`` → Description → Request (only tables with content) → curl example → Response (one sub-section per status, schema table when fields need explanation) → endpoint-specific errors.
+4. **Appendix**: table of service-wide common errors.
 
-Cột "Bắt buộc" dùng ✅/❌.
+The "Required" column uses ✅/❌.

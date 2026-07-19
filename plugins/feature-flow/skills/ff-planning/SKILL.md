@@ -1,147 +1,147 @@
 ---
 name: ff-planning
-description: Biến một vấn đề/quyết định đã chốt thành implementation plan đã được phản biện kỹ. Claude Code và Codex cùng deep-dive vào code thật (Claude tỏa sub-agent song song khi phạm vi lớn), tranh luận ngang hàng qua /codex-think-about để thống nhất cách hiện thực, viết plan ra file .md kèm dependency contract (Owns files/Depends on), rồi chạy /codex-plan-review để hai bên review lại plan (adversarial, sửa tại chỗ tới khi APPROVE hoặc stalemate). Dùng khi user nói "lên implement plan", "deep dive code rồi lập kế hoạch", "claude với codex bàn cách làm rồi review plan", "kế hoạch hiện thực cho vấn đề này", "plan rồi review plan", "tạo plan có phản biện". Thường chạy SAU ff-problem-solver (nhận analysis_brief.md) nhưng cũng nhận trực tiếp một vấn đề rõ ràng. KHÔNG dùng cho: tranh luận quyết định chưa chốt (ff-problem-solver), review code đã viết (codex-review), tracking tiến độ (ff-impl-status), viết test (ff-test-case-writer).
+description: Turn a settled problem/decision into a thoroughly challenged implementation plan. Claude Code and Codex deep-dive into the real code together (Claude fans out parallel sub-agents when scope is large), debate as peers via /codex-think-about to agree on the implementation approach, write the plan to a .md file with a dependency contract (Owns files/Depends on), then run /codex-plan-review so both sides review the plan (adversarial, fixing in place until APPROVE or stalemate). Use when the user says "draw up an implementation plan", "deep dive into the code then make a plan", "have claude and codex discuss the approach then review the plan", "implementation plan for this problem", "plan then review the plan", "create a plan with adversarial review". Usually runs AFTER ff-problem-solver (receiving analysis_brief.md) but also accepts a clearly stated problem directly. NOT for: debating an unsettled decision (ff-problem-solver), reviewing written code (codex-review), progress tracking (ff-impl-status), writing tests (ff-test-case-writer).
 ---
 
 # Implementation Planner (Claude ⇄ Codex)
 
-Từ một **quyết định/vấn đề đã chốt** → **implementation plan đã qua phản biện**. Hai pha tranh luận ngang hàng nối tiếp nhau:
+From a **settled decision/problem** → an **implementation plan that has been challenged**. Two peer-debate phases in sequence:
 
 ```
-Quyết định/vấn đề (thường là analysis_brief.md từ ff-problem-solver)
+Decision/problem (usually analysis_brief.md from ff-problem-solver)
    │
    ▼
-[1] Deep-dive code (Claude độc lập, rào thông tin; adaptive: inline hoặc tỏa sub-agent)
+[1] Code deep-dive (Claude independent, information-walled; adaptive: inline or fan-out sub-agents)
    │
    ▼
-[2] Debate CÁCH hiện thực   ← delegate /codex-think-about
+[2] Debate HOW to implement   ← delegate /codex-think-about
    │
    ▼
-[3] Viết plan ra file .md (kèm dependency contract: Owns files / Depends on)   ← skill này
+[3] Write plan to a .md file (with dependency contract: Owns files / Depends on)   ← this skill
    │
    ▼
-[4] Review plan (adversarial, sửa tại chỗ)   ← delegate /codex-plan-review
+[4] Review plan (adversarial, fix in place)   ← delegate /codex-plan-review
    │
    ▼
-[5] Plan cuối APPROVE + bước hành động
+[5] Final APPROVED plan + action steps
 ```
 
-Skill này **không tự chế giao thức codex** — nó nối hai engine có sẵn (`/codex-think-about` cho debate approach, `/codex-plan-review` cho review plan) và thêm phần deep-dive + viết plan ở giữa.
+This skill **does not invent its own codex protocol** — it chains two existing engines (`/codex-think-about` for approach debate, `/codex-plan-review` for plan review) and adds the deep-dive + plan-writing in between.
 
-## Nguyên tắc cốt lõi
+## Core principles
 
-- **Claude và Codex ngang hàng** — không reviewer/implementer. Hai kỹ sư phản biện nhau.
-- **Rào thông tin** ở pha deep-dive: Claude PHẢI tự đọc code + dựng cách tiếp cận riêng TRƯỚC khi đọc output Codex.
-- **Bám giải pháp đã chốt (BẮT BUỘC)**: plan chỉ lo *cách hiện thực* quyết định đã chốt, KHÔNG trôi/đổi/thêm/bớt phạm vi. Nếu deep-dive phát hiện giải pháp đã chốt **không chạy được** → **DỪNG, báo ngược về `ff-problem-solver`** để chốt lại; KHÔNG tự quyết lại giải pháp trong skill này. (Fidelity ngược lên upstream.)
-- **Plan bám code thật**, không lý thuyết — mọi bước phải trỏ tới file/hàm/module thật sẽ đụng.
-- **Dependency-honest**: mỗi bước khai `Owns files` (file nó sở hữu) + `Depends on` (bước phụ thuộc). Chỉ đánh "song song được" khi file disjoint VÀ không phụ thuộc lẫn nhau. Nghi ngờ → mặc định **tuần tự**. Khai sai "parallel" là nguy hiểm cho executor.
-- **Codex KHÔNG sửa file project** ở pha debate (`/codex-think-about`). Ở pha review (`/codex-plan-review`), file được sửa **chỉ là file plan**, không phải code — Claude sửa, không phải Codex.
-- **Plan dạng `.md`** để `/codex-plan-review` sửa tại chỗ dễ dàng.
-- **Artifact ra đĩa, main giữ gọn**: report deep-dive của sub-agent + transcript debate là trung gian; kết quả sống trong plan `.md`.
+- **Claude and Codex are peers** — no reviewer/implementer split. Two engineers challenging each other.
+- **Information wall** in the deep-dive phase: Claude MUST read the code and form its own approach BEFORE reading Codex output.
+- **Stick to the settled solution (MANDATORY)**: the plan only covers *how to implement* the settled decision — do NOT drift/change/add/remove scope. If the deep-dive reveals the settled solution **doesn't work** → **STOP, escalate back to `ff-problem-solver`** to re-decide; do NOT re-decide the solution inside this skill. (Fidelity flows back upstream.)
+- **Plan grounded in real code**, not theory — every step must point to real files/functions/modules it will touch.
+- **Dependency-honest**: each step declares `Owns files` (files it owns) + `Depends on` (prerequisite steps). Only mark "parallelizable" when files are disjoint AND there are no mutual dependencies. In doubt → default to **sequential**. Falsely declaring "parallel" is dangerous for the executor.
+- **Codex does NOT modify project files** in the debate phase (`/codex-think-about`). In the review phase (`/codex-plan-review`), the only file modified **is the plan file**, not code — and Claude edits it, not Codex.
+- **Plan as `.md`** so `/codex-plan-review` can easily fix it in place.
+- **Artifacts to disk, main stays lean**: sub-agent deep-dive reports + debate transcripts are intermediates; the result lives in the plan `.md`.
 
 ## Workflow
 
-### Bước 0 — Nhận đầu vào
+### Step 0 — Take input
 
-Cần một **quyết định/vấn đề đủ rõ để lập kế hoạch**:
+Requires a **decision/problem clear enough to plan for**:
 
-- Nếu user vừa chạy `ff-problem-solver` → **lấy `analysis_brief.md` làm đầu vào chính** (quyết định + lý do + đánh đổi + bước tiếp theo + ràng buộc). Đây là nguồn sự thật; plan phải bám nó.
-- Nếu chưa có brief → hỏi user phát biểu: cần làm gì, tiêu chí thành công, ràng buộc (stack, không được đổi gì, deadline). Nếu vấn đề còn đang phân vân nhiều phương án → gợi ý chạy `ff-problem-solver` trước, đừng lập plan trên nền chưa chốt.
-- Xác định **feature/scope** → chọn thư mục output `docs/features/<feature>/implementation_plan.md` (theo convention của bundle). Hỏi nếu chưa rõ feature.
-- Chốt **effort** cho Codex (mặc định `high`).
+- If the user just ran `ff-problem-solver` → **use `analysis_brief.md` as the primary input** (decision + rationale + trade-offs + next steps + constraints). This is the source of truth; the plan must stick to it.
+- If there is no brief yet → ask the user to state: what needs doing, success criteria, constraints (stack, what must not change, deadline). If the problem still has multiple undecided options → suggest running `ff-problem-solver` first; don't plan on an unsettled foundation.
+- Determine the **feature/scope** → choose the output directory `docs/features/<feature>/implementation_plan.md` (per bundle convention). Ask if the feature is unclear.
+- Lock the **effort** for Codex (default `high`).
 
-### Bước 1 — Deep-dive code (RÀO THÔNG TIN, adaptive, Claude độc lập)
+### Step 1 — Code deep-dive (INFORMATION WALL, adaptive, Claude independent)
 
-Trước khi gọi Codex, Claude tự đọc code để hiểu địa hình. **Chọn cách theo quy mô (adaptive-by-size — cổng chống over-engineer):**
+Before calling Codex, Claude reads the code itself to understand the terrain. **Pick the approach by scale (adaptive-by-size — an anti-over-engineering gate):**
 
-- **Phạm vi nhỏ / đã biết chỗ** → deep-dive **inline** bằng Glob/Grep/Read ngay trên main.
-- **Phạm vi lớn / phải quét rộng** (nhiều module, chưa biết touchpoint) → **tỏa parallel, main giữ lean**:
-  1. **Index rẻ trước**: nếu có công cụ index code (vd `graphify`) → chạy để có bản đồ nhanh; nếu không → một lượt Glob/Grep định vị vùng.
-  2. **Fan-out trong 1 message**: nhiều sub-agent `Explore`/`general-purpose` song song, mỗi con một góc (entry points, module sẽ sửa, data model, integration points, test hiện có, convention). Yêu cầu mỗi con trả **report gọn `file:line` + phát hiện**, KHÔNG dump code.
-  3. **Synthesis trên main**: gộp report thành **bản đồ vùng tác động** (file:line touchpoint, phần phụ thuộc, chỗ dễ vỡ). Main không nuốt nguyên file.
+- **Small scope / known location** → deep-dive **inline** with Glob/Grep/Read right on main.
+- **Large scope / broad sweep required** (many modules, unknown touchpoints) → **fan out in parallel, keep main lean**:
+  1. **Cheap index first**: if a code-indexing tool exists (e.g. `graphify`) → run it for a quick map; otherwise → one Glob/Grep pass to locate the area.
+  2. **Fan-out in 1 message**: multiple `subagent_type: 'ff-sonnet-explorer'` sub-agents in parallel, each covering one angle (entry points, modules to change, data model, integration points, existing tests, conventions) — Sonnet handles search/read/synthesize work at near-parity for a fraction of the cost (reserve Opus for implementation, Fable for judgment). The agent's own definition enforces the tight `EXPLORE REPORT` format (`file:line` findings, no code dumps, read-only).
+  3. **Synthesis on main**: merge reports into an **impact-area map** (file:line touchpoints, dependencies, fragile spots). Main does not ingest whole files.
 
-Từ bản đồ đó, Claude phác **cách hiện thực sơ bộ** của riêng mình: các bước, thứ tự, file mỗi bước đụng, rủi ro, phần cần thử nghiệm. Đây phải xong và là lập trường độc lập của Claude TRƯỚC Bước 2.
+From that map, Claude drafts its own **preliminary implementation approach**: the steps, ordering, files each step touches, risks, parts needing experimentation. This must be done and be Claude's independent position BEFORE Step 2.
 
-**Nếu hiện thực này port/phỏng theo một tham chiếu** (ngôn ngữ khác, thư viện, repo khác, prior art) → thêm một lượt **phân tích tham chiếu** trước khi phác bước: đọc code tham chiếu thật, trích **đoạn khớp** (cái gì map 1:1), **khác biệt ngữ nghĩa** (API/kiểu/hành vi lệch), và **gotchas platform-/stack-specific** không mang qua nguyên vẹn (concurrency model, quản lý bộ nhớ, timezone/locale, lỗi ngầm định, thứ tự khởi tạo...). Ghi lại để plan KHÔNG mặc định hành vi tham chiếu tự chuyển sang stack đích. Kết quả đổ vào mục **"Tham chiếu & gotchas"** của plan (Bước 3). Không có tham chiếu để port → bỏ qua bước này.
+**If this implementation ports/adapts from a reference** (another language, library, repo, prior art) → add a **reference analysis** pass before drafting steps: read the actual reference code, extract **matching fragments** (what maps 1:1), **semantic differences** (API/type/behavior mismatches), and **platform-/stack-specific gotchas** that don't carry over intact (concurrency model, memory management, timezone/locale, implicit errors, initialization order...). Record them so the plan does NOT assume reference behavior transfers automatically to the target stack. Results feed the plan's **"References & gotchas"** section (Step 3). No reference to port → skip this pass.
 
-**Kiểm fidelity ngay tại đây**: nếu deep-dive cho thấy giải pháp đã chốt trong brief **mâu thuẫn với code thật / không khả thi** → DỪNG, nêu rõ vì sao, báo ngược về `ff-problem-solver`. Không âm thầm đổi giải pháp rồi lập plan cho cái khác.
+**Fidelity check right here**: if the deep-dive shows the solution settled in the brief **contradicts the real code / is infeasible** → STOP, state clearly why, escalate back to `ff-problem-solver`. Don't silently swap the solution and plan for something else.
 
-### Bước 2 — Debate CÁCH hiện thực: invoke /codex-think-about
+### Step 2 — Debate HOW to implement: invoke /codex-think-about
 
-Giao phần tranh luận cách tiếp cận cho `/codex-think-about` (engine lo init→poll→cross-analysis→resume→consensus/stalemate→cleanup).
+Delegate the approach debate to `/codex-think-about` (the engine handles init→poll→cross-analysis→resume→consensus/stalemate→cleanup).
 
-Invoke Skill `codex-think-about`, truyền:
-- **QUESTION** = "Cách hiện thực tốt nhất cho `<quyết định đã chốt>` là gì?" (kèm tiêu chí thành công). Debate về *cách làm*, không mở lại *có nên làm không*.
-- **PROJECT_CONTEXT** = bản đồ vùng tác động + convention + ràng buộc từ Bước 0-1 + tóm tắt `analysis_brief.md`.
-- **RELEVANT_FILES** = các file touchpoint tìm được ở Bước 1 (đường dẫn).
-- **CONSTRAINTS** = điều không được vi phạm (gồm: không đổi phạm vi giải pháp đã chốt).
-- **EFFORT** = mức đã chốt.
+Invoke Skill `codex-think-about`, passing:
+- **QUESTION** = "What is the best implementation approach for `<the settled decision>`?" (with success criteria). Debate *how to do it*, don't reopen *whether to do it*.
+- **PROJECT_CONTEXT** = impact-area map + conventions + constraints from Steps 0-1 + summary of `analysis_brief.md`.
+- **RELEVANT_FILES** = touchpoint files found in Step 1 (paths).
+- **CONSTRAINTS** = what must not be violated (including: no changing the scope of the settled solution).
+- **EFFORT** = the locked level.
 
-Mang **cách hiện thực sơ bộ ở Bước 1** làm lập trường mở màn của Claude. Tranh luận để hội tụ về: kiến trúc cách làm, thứ tự bước, điểm tích hợp, chiến lược test/rollback, các đánh đổi, **ranh giới sở hữu file giữa các bước** (phục vụ dependency contract ở Bước 3). Tôn trọng mọi luật của codex-think-about (rào thông tin, không cap vòng, File Modification Guard, luôn finalize+stop). Nếu skill không khả dụng → báo user cài codex, KHÔNG tự chế giao thức.
+Bring the **preliminary approach from Step 1** as Claude's opening position. Debate to converge on: approach architecture, step ordering, integration points, test/rollback strategy, trade-offs, and **file-ownership boundaries between steps** (feeding the dependency contract in Step 3). Respect all codex-think-about rules (information wall, no round cap, File Modification Guard, always finalize+stop). If the skill is unavailable → tell the user to install codex; do NOT improvise a protocol.
 
-### Bước 3 — Viết implementation plan ra file .md (kèm dependency contract)
+### Step 3 — Write the implementation plan to a .md file (with dependency contract)
 
-Tổng hợp kết quả debate thành plan **hành động được**, ghi `docs/features/<feature>/implementation_plan.md`. Cấu trúc tối thiểu (xem `references/plan-template.md`):
+Synthesize the debate outcome into an **actionable** plan, written to `docs/features/<feature>/implementation_plan.md`. Minimum structure (see `references/plan-template.md`):
 
-| Mục | Nội dung |
+| Section | Content |
 |---|---|
-| **Mục tiêu / Outcomes** | Cái gì được coi là xong (nguồn để derive acceptance criteria) |
-| **Bối cảnh & quyết định** | Tóm tắt quyết định + lý do (link `analysis_brief.md` / decision record nếu có) |
-| **Vùng tác động** | Bảng file:line sẽ đụng + vai trò |
-| **Tham chiếu & gotchas** *(nếu có port)* | Đoạn code khớp, khác biệt ngữ nghĩa, gotchas platform-/stack-specific — chỉ khi hiện thực phỏng theo một tham chiếu (từ lượt phân tích tham chiếu ở Bước 1) |
-| **Các bước hiện thực** | Đánh số, mỗi bước khai: làm gì, **Owns files** (file nó sở hữu), **Depends on** (bước phụ thuộc), song song được không, **Độ bất định (uncertainty)** (cao/trung/thấp — quyết định càng dễ phải sửa lại càng cao) |
-| **Test & verify** | Cách kiểm chứng từng phần + tiêu chí pass |
-| **Rủi ro & rollback** | Điều dễ vỡ + cách lùi |
-| **Ngoài phạm vi** | Chủ đích không làm lần này |
+| **Goals / Outcomes** | What counts as done (source to derive acceptance criteria) |
+| **Context & decision** | Decision summary + rationale (link `analysis_brief.md` / decision record if any) |
+| **Impact area** | Table of file:line to be touched + role |
+| **References & gotchas** *(if porting)* | Matching code fragments, semantic differences, platform-/stack-specific gotchas — only when the implementation adapts a reference (from the Step 1 reference analysis) |
+| **Implementation steps** | Numbered; each step declares: what to do, **Owns files** (files it owns), **Depends on** (prerequisite steps), parallelizable or not, **Uncertainty** (high/medium/low — the more likely a decision needs rework, the higher) |
+| **Test & verify** | How to verify each part + pass criteria |
+| **Risks & rollback** | What can break + how to back out |
+| **Out of scope** | Deliberately not done this time |
 
-**Dependency contract** (`Owns files` / `Depends on` cho mỗi bước) là hợp đồng để `ff-implement` parallelize an toàn: bước có file disjoint + không phụ thuộc → chạy song song; còn lại tuần tự. Khai **honest** — nghi thì để tuần tự.
+The **dependency contract** (`Owns files` / `Depends on` per step) is the contract that lets `ff-implement` parallelize safely: steps with disjoint files + no dependencies → run in parallel; everything else sequential. Declare **honestly** — in doubt, keep sequential.
 
-**Tweakable-first (Độ bất định)** phủ **LÊN TRÊN** dependency contract, không thay nó: mỗi bước gắn thêm cờ độ bất định (cao/trung/thấp). Quyết định **dễ phải sửa lại nhất** — chọn kiến trúc, hình dạng schema, giả định chưa kiểm chứng — phải nêu **trước và to nhất** để review nhắm vào đó **khi đổi còn rẻ**; việc cơ học/chắc chắn gom lại hoặc đẩy về sau. Lưu ý: cờ bất định chỉ định **thứ tự chú ý / ưu tiên review**, còn `Depends on` mới là cái quyết định **thứ tự chạy / parallelize** thật — đừng lẫn hai trục.
+**Tweakable-first (Uncertainty)** layers **ON TOP OF** the dependency contract, it does not replace it: each step also gets an uncertainty flag (high/medium/low). The decisions **most likely to need rework** — architecture choices, schema shapes, unverified assumptions — must be stated **first and loudest** so review targets them **while changing is still cheap**; mechanical/certain work is batched or pushed later. Note: the uncertainty flag only sets **attention order / review priority**, while `Depends on` is what determines the real **execution order / parallelization** — don't conflate the two axes.
 
-Nếu project cần plan dạng JSON theo `.claude/schemas/plan-schema.json` (xem `.claude/docs/plan-execution-guide.md`) → sinh kèm; nhưng bản `.md` là bản để `/codex-plan-review` review. Giữ heading rõ ràng (`#`/`##`) — `/codex-plan-review` cần cấu trúc heading để bám.
+If the project needs a JSON plan per `.claude/schemas/plan-schema.json` (see `.claude/docs/plan-execution-guide.md`) → generate it alongside; but the `.md` version is the one `/codex-plan-review` reviews. Keep clear headings (`#`/`##`) — `/codex-plan-review` needs the heading structure to anchor on.
 
-### Bước 4 — Review plan: invoke /codex-plan-review
+### Step 4 — Review the plan: invoke /codex-plan-review
 
-Giao plan vừa viết cho `/codex-plan-review` để Claude và Codex review lại theo lối adversarial (engine lo loop poll→verdict→apply/rebut→resume tới APPROVE hoặc stalemate, sửa plan tại chỗ).
+Hand the freshly written plan to `/codex-plan-review` so Claude and Codex review it adversarially (the engine handles the poll→verdict→apply/rebut→resume loop until APPROVE or stalemate, fixing the plan in place).
 
-Invoke Skill `codex-plan-review`, truyền:
-- **PLAN_PATH** = đường dẫn tuyệt đối tới `implementation_plan.md` vừa viết.
-- **USER_REQUEST** = quyết định/vấn đề gốc (link `analysis_brief.md` nếu có).
-- **SESSION_CONTEXT** = plan này sinh từ debate Claude⇄Codex; ràng buộc; feature scope; **plan phải bám giải pháp đã chốt** (đừng để review nới phạm vi).
-- **ACCEPTANCE_CRITERIA** = lấy từ mục Mục tiêu/Outcomes.
-- **EFFORT** = mức đã chốt.
+Invoke Skill `codex-plan-review`, passing:
+- **PLAN_PATH** = absolute path to the `implementation_plan.md` just written.
+- **USER_REQUEST** = the original decision/problem (link `analysis_brief.md` if any).
+- **SESSION_CONTEXT** = this plan came from a Claude⇄Codex debate; constraints; feature scope; **the plan must stick to the settled solution** (don't let review widen scope).
+- **ACCEPTANCE_CRITERIA** = taken from the Goals/Outcomes section.
+- **EFFORT** = the locked level.
 
-Mỗi issue Codex nêu mà hợp lệ → Claude **sửa thẳng vào file plan** rồi resume; issue không hợp lệ → rebut có lý do. Lặp tới `verdict === APPROVE` hoặc stalemate. Luôn finalize+stop. Nếu review đề xuất **đổi giải pháp cốt lõi** (không phải cách hiện thực) → đó là tín hiệu quay về `ff-problem-solver`, không tự quyết trong plan review.
+Every valid issue Codex raises → Claude **fixes directly in the plan file** then resumes; invalid issues → rebut with reasons. Loop until `verdict === APPROVE` or stalemate. Always finalize+stop. If review proposes **changing the core solution** (not the implementation approach) → that's a signal to go back to `ff-problem-solver`, not something to decide inside plan review.
 
-### Bước 5 — Hoàn tất + bàn giao
+### Step 5 — Wrap up + handoff
 
-- **APPROVE** → báo plan đã sẵn sàng hiện thực, đường dẫn file, tóm tắt: số vòng review, issue tìm/sửa/bác, rủi ro còn lại, bước tiếp theo.
-- **Stalemate** → liệt kê điểm bế tắc (`Điểm | Claude | Codex`), khuyến nghị nên nghiêng bên nào, hỏi user chốt.
-- **Chain**: `implementation_plan.md` APPROVE là đầu vào cho `ff-implement` (hiện thực + review code). Nhắc bước kế tiếp của bundle: hiện thực → `ff-impl-status` (tracking), `ff-test-case-writer`/`ff-service-test-runner` (test), `ff-feature-brief` (bàn giao PO/QC).
+- **APPROVE** → report the plan is ready to implement, the file path, and a summary: review rounds, issues found/fixed/rebutted, remaining risks, next steps.
+- **Stalemate** → list the deadlocked points (`Point | Claude | Codex`), recommend which side to lean toward, ask the user to decide.
+- **Chain**: the APPROVED `implementation_plan.md` is the input for `ff-implement` (implement + code review). Mention the bundle's next steps: implement → `ff-impl-status` (tracking), `ff-test-case-writer`/`ff-service-test-runner` (tests), `ff-feature-brief` (PO/QC handoff).
 
-## Vệ sinh context (compact có kiểm soát)
+## Context hygiene (controlled compact)
 
-Đừng `/compact` trần. Sau khi plan APPROVE, đề xuất block compact điền path thật, rõ GIỮ/BỎ:
+Don't run a bare `/compact`. After the plan is APPROVED, propose a compact block with the real path filled in, clear KEEP/DROP:
 
 ```
-/compact GIỮ: nội dung docs/features/<feature>/implementation_plan.md (bản APPROVE, gồm dependency contract),
-tóm tắt: số vòng review + issue đã sửa, rủi ro còn lại.
-BỎ: report deep-dive của sub-agent, transcript /codex-think-about và /codex-plan-review, phác thảo plan trung gian
-(đã tổng hợp vào plan file; diff còn ở git).
+/compact KEEP: contents of docs/features/<feature>/implementation_plan.md (APPROVED version, incl. dependency contract),
+summary: review round count + issues fixed, remaining risks.
+DROP: sub-agent deep-dive reports, /codex-think-about and /codex-plan-review transcripts, intermediate plan drafts
+(already synthesized into the plan file; diffs remain in git).
 ```
 
-Cái gì chưa vào plan file → gắn cờ must-keep.
+Anything not yet in the plan file → flag as must-keep.
 
 ## Anti-patterns
 
-- ❌ Bỏ deep-dive Bước 1, debate cách làm trên không khí → plan không bám code thật.
-- ❌ **Trôi khỏi giải pháp đã chốt** — tự đổi/thêm/bớt phạm vi thay vì báo ngược về `ff-problem-solver`.
-- ❌ Lập plan khi quyết định chưa chốt (đáng lẽ chạy `ff-problem-solver` trước).
-- ❌ Nuốt nguyên file vào main khi phạm vi lớn (nên tỏa sub-agent trả report gọn); hoặc tỏa sub-agent cho việc nhỏ đã biết chỗ (over-engineer).
-- ❌ Khai "song song được" bừa khi file chồng nhau/có phụ thuộc → executor vỡ. Nghi thì tuần tự.
-- ❌ Xếp plan thuần theo dependency rồi chôn quyết định kiến trúc rủi ro nhất ở giữa → phát hiện sai lúc sửa đã đắt. Nêu phần bất định cao lên trước và to nhất.
-- ❌ Port từ tham chiếu rồi mặc định hành vi tự chuyển sang stack đích, không ghi gotchas / khác biệt ngữ nghĩa.
-- ❌ Viết plan văn xuôi không bước đánh số / không file touchpoint / không dependency contract → không review được, không parallelize được.
-- ❌ Để Codex sửa code project (chỉ được sửa file plan, và do Claude sửa).
-- ❌ Tự viết giao thức gọi codex thay vì delegate hai skill có sẵn.
-- ❌ Nhận APPROVE giả khi `/codex-plan-review` chưa thật sự ra `verdict: APPROVE`.
+- ❌ Skipping the Step 1 deep-dive and debating the approach in a vacuum → plan not grounded in real code.
+- ❌ **Drifting from the settled solution** — changing/adding/removing scope yourself instead of escalating back to `ff-problem-solver`.
+- ❌ Planning when the decision isn't settled (should have run `ff-problem-solver` first).
+- ❌ Ingesting whole files into main when scope is large (should fan out sub-agents returning compact reports); or fanning out sub-agents for a small known-location task (over-engineering).
+- ❌ Carelessly declaring "parallelizable" when files overlap/depend on each other → the executor breaks. In doubt, sequential.
+- ❌ Ordering the plan purely by dependency and burying the riskiest architectural decision in the middle → discovering it's wrong when fixing is already expensive. Surface the high-uncertainty parts first and loudest.
+- ❌ Porting from a reference while assuming behavior transfers to the target stack, without recording gotchas / semantic differences.
+- ❌ Writing a prose plan with no numbered steps / no file touchpoints / no dependency contract → unreviewable, unparallelizable.
+- ❌ Letting Codex modify project code (only the plan file may be modified, and by Claude).
+- ❌ Hand-rolling a codex-calling protocol instead of delegating to the two existing skills.
+- ❌ Accepting a fake APPROVE when `/codex-plan-review` hasn't actually produced `verdict: APPROVE`.

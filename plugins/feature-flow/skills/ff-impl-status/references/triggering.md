@@ -1,62 +1,61 @@
 # Triggering phrases
 
-Skill `ff-impl-status` chỉ active sau khi user opt-in rõ ràng. Tham chiếu nhanh.
+The `ff-impl-status` skill is only active after the user explicitly opts in. Quick reference.
 
-## Activate (skill bật)
+## Activate (skill on)
 
 - `/ff-impl-status`
 - `ff-impl-status`
-- "dùng skill ff-impl-status"
-- "bật ff-impl-status"
-- "bật status file"
+- "turn on ff-impl-status"
+- "turn on the status file"
 - "maintain status file"
-- "theo dõi implementation status"
+- "track implementation status"
 - "use ff-impl-status skill"
 - "enable status tracker"
 
-## Deactivate / pause (giữ file, không update)
+## Deactivate / pause (keep the file, stop updating)
 
 - "stop status file"
 - "skip status"
-- "khỏi cần status file"
-- "đừng update status nữa"
+- "no need for the status file"
+- "stop updating the status"
 - "pause ff-impl-status"
-- "tắt status tracker"
+- "turn off the status tracker"
 
-## Resume (sau pause trong cùng session, update lại)
+## Resume (after a pause within the same session, updating again)
 
 - "resume ff-impl-status"
-- "bật lại status file"
-- "update status đi"
+- "turn the status file back on"
+- "go update the status"
 
-## Load lại từ chat trước (cross-session)
+## Reload from a previous chat (cross-session)
 
-Khi user mở chat mới và muốn tiếp tục feature đã có file trong `docs/features/`:
+When the user opens a new chat and wants to continue a feature that already has files in `docs/features/`:
 
 - "resume ff-impl-status <feature>"
 - "load status <feature>"
-- "tiếp tục feature X"
-- "tiếp tục từ session trước"
-- "đọc lại status file của <feature>"
-- "load lại proposal + status"
+- "resume feature X"
+- "continue from the previous session"
+- "re-read the status file for <feature>"
+- "reload the proposal + status"
 - "continue from <feature>"
 
-Skill workflow khi gặp các phrase này:
-1. Locate `docs/features/<feature>/`. Nếu user không nói tên → list các folder có sẵn cho user chọn.
-2. Đọc `proposal.html` (nếu có) → `implementation_status.html` → `README.md`.
-3. Tóm tắt context ≤10 dòng cho user (progress, decisions, bugs, rollout pending).
-4. Verify file/symbol nhắc trong status còn tồn tại (grep). Drift → ghi vào status.
-5. Đợi chỉ đạo của user, không auto-code.
+Skill workflow on these phrases:
+1. Locate `docs/features/<feature>/`. If the user didn't name it → list available folders for the user to choose.
+2. Read `proposal.html` (if any) → `implementation_status.html` → `README.md`.
+3. Summarize context in ≤10 lines for the user (progress, decisions, bugs, pending rollout).
+4. Verify files/symbols mentioned in the status still exist (grep). Drift → record in the status.
+5. Wait for the user's direction, don't auto-code.
 
-## KHÔNG trigger (false positive thường gặp)
+## Do NOT trigger (common false positives)
 
-Đây là phrase **không** được trigger skill — user chỉ yêu cầu implement, không yêu cầu tracking:
+These phrases must **not** trigger the skill — the user is only asking to implement, not to track:
 
 - "implement feature X"
-- "làm cho tôi task này"
-- "thêm endpoint Y"
+- "do this task for me"
+- "add endpoint Y"
 - "refactor module Z"
-- "viết migration"
-- "fix bug này"
+- "write the migration"
+- "fix this bug"
 
-Skill chỉ tạo file khi user opt-in. Một mình "implement" / "code đi" / "làm đi" KHÔNG đủ để trigger.
+The skill only creates files on explicit opt-in. "implement" / "start coding" / "go ahead" alone is NOT enough to trigger.

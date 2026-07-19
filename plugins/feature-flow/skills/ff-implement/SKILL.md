@@ -1,135 +1,143 @@
 ---
 name: ff-implement
-description: Hiện thực một implementation plan rồi để Claude Code và Codex cùng review code vừa viết qua /codex-impl-review — đảm bảo code chất lượng VÀ bám đúng plan. Claude đọc plan, implement theo từng bước (inline khi plan nhỏ, hoặc orchestrate sub-agent song song khi plan lớn), sau đó invoke /codex-impl-review để hai bên review adversarial trên thay đổi chưa commit (working-tree) hoặc branch diff, sửa tới khi APPROVE hoặc stalemate, kiểm cả độ khớp với plan. Dùng khi user nói "đọc plan rồi implement", "implement xong review code", "code theo plan rồi cho codex review", "hiện thực plan này", "implement và review lại code base vừa viết", "đảm bảo code follow plan". Thường chạy SAU ff-planning (đã có plan APPROVE). KHÔNG dùng cho: lập plan (ff-planning), tranh luận quyết định (ff-problem-solver), review plan trước khi code (codex-plan-review), chỉ review code không implement (codex-impl-review trực tiếp).
+description: Implement an implementation plan using a 3-model architecture — Fable 5 (architect) analyzes dependencies to decide parallel/sequential, Opus fans out sub-agents to implement, Fable serves as a read-only advisor for big technical decisions — then have Claude Code and Codex jointly review the freshly written code via /codex-impl-review, ensuring code quality AND plan conformance. After implementation, invoke /codex-impl-review for an adversarial two-party review on uncommitted changes (working-tree) or branch diff, fixing until APPROVE or stalemate, also checking plan conformance. Use when the user says "read the plan then implement", "implement then review the code", "code per the plan then have codex review", "implement this plan", "implement and review the code just written", "make sure the code follows the plan". Usually runs AFTER ff-planning (plan already APPROVED). NOT for: making a plan (ff-planning), debating decisions (ff-problem-solver), reviewing a plan before coding (codex-plan-review), reviewing code only without implementing (codex-impl-review directly).
 ---
 
-# Plan Implementer (Claude implement → Claude ⇄ Codex review)
+# Plan Implementer (Fable orchestrates → Opus implements → Claude ⇄ Codex review)
 
-Từ **implementation plan đã chốt** → **code đã viết + đã review đạt chất lượng + bám plan**. Cách implement **thích nghi theo quy mô plan**; phần review là một pha ngang hàng (Claude ⇄ Codex):
+From a **finalized implementation plan** → **code written + reviewed to quality + plan-conformant**. 3-model architecture — the strongest model steers, cheaper models do the typing:
+
+- **Fable 5 (architect/advisor)**: analyzes the dependency contract → decides which phases run in parallel vs sequentially; and acts as a **read-only advisor** when Opus hits a big technical decision.
+- **Opus (implementer)**: `ff-opus-implementer` sub-agents fan out to write code per the DAG, each agent owns its own files, receives a 5-part brief (objective/files/interfaces/constraints/verification), self-verifies and returns a report with evidence.
+- **Codex (reviewer)**: adversarial review via `/codex-impl-review` — unchanged from before.
 
 ```
-implementation_plan.md (thường từ ff-planning)
+implementation_plan.md (usually from ff-planning)
    │
    ▼
-[1] Đọc plan, xác nhận scope + CHỌN CHẾ ĐỘ (inline / orchestrated)
-   │
-   ├─ NHỎ  → [2a] Implement inline (Claude viết trực tiếp)
-   │
-   └─ LỚN  → [2b] Orchestrate: Phase 0 contract-first → tỏa sub-agent theo Owns files
-   │              (main = nhạc trưởng, giữ dependency map + conformance trong FILE)
-   ▼
-[3] Integration join + self-check vs plan (build/test trên main)
+[1] Claude reads the plan, confirms scope → Fable analyzes the DAG (parallel/sequential)
    │
    ▼
-[4] Review code: Claude ⇄ Codex   ← delegate /codex-impl-review (1 join trên main, không fan out)
+[2] Phase 0 contract-first on main → fan out OPUS sub-agents per the DAG
+   │      (Opus hits a big decision → consult FABLE ADVISOR, fresh agent, verdict ~300 tokens)
+   ▼
+[3] Integration join + self-check vs plan (build/test on main)
    │
    ▼
-[5] Hoàn tất + bàn giao + compact có kiểm soát
+[4] Code review: Claude ⇄ Codex   ← delegate /codex-impl-review (1 join on main, no fan out)
+   │
+   ▼
+[5] Wrap up + handoff + controlled compact
 ```
 
-Skill này **không tự chế giao thức codex** — phần review giao cho `/codex-impl-review`. Giá trị thêm: đọc & bám plan khi implement, orchestrate an toàn khi plan lớn, và đưa **độ khớp với plan** thành một tiêu chí review tường minh.
+This skill **does not invent its own codex protocol** — the review part is delegated to `/codex-impl-review`. Added value: reading & following the plan while implementing, assigning model roles by strength/cost, orchestrating safely, and making **plan conformance** an explicit review criterion.
 
-## Nguyên tắc cốt lõi
+## Core principles
 
-- **Bám plan**: mọi bước implement trỏ về một mục trong plan. Lệch plan → hoặc cập nhật plan có lý do, hoặc không lệch. Không âm thầm trôi khỏi plan.
-- **Adaptive-by-size (cổng chống over-engineer)**: chỉ orchestrate khi plan **lớn/vượt ngưỡng**; nhỏ thì implement inline. Đừng dựng dàn nhạc cho việc một người làm.
-- **Orchestrator giữ lean**: khi orchestrate, main = nhạc trưởng — giữ **dependency map + conformance report trong FILE**, không trong bộ nhớ chat. Ruột từng phase nằm ở sub-agent; main không nuốt code.
-- **Song song chỉ khi disjoint + no-dep + contract-first**: hai bước chạy song song ⟺ `Owns files` disjoint VÀ không phụ thuộc (theo dependency contract của plan), VÀ seam chung đã khóa ở Phase 0.
-- **Brief tự đủ + report gọn**: mỗi sub-agent nhận brief tự đủ, sửa **CHỈ file nó sở hữu**, trả report gọn (`plan item → status → file:line → deviation`), **KHÔNG dump code**.
-- **Review = 1 join trên main, không fan out**: `/codex-impl-review` đọc **git diff**, không đọc chat. Claude viết code; Codex chỉ review; Claude áp fix sau khi đánh giá từng issue.
-- **Cần sửa code → phải thoát plan mode** (skill này chỉnh sửa file). `/codex-impl-review` yêu cầu thoát plan mode trước.
-- **Adversarial review tới cùng**: chỉ dừng khi `verdict === APPROVE` hoặc stalemate. Không nhận APPROVE giả.
-- **Giữ ý định chức năng**: fix theo review không đổi hành vi trừ khi issue đòi đổi hành vi.
+- **Follow the plan**: every implementation step points back to a plan item. Deviating from the plan → either update the plan with a reason, or don't deviate. No silent drift from the plan.
+- **Assign roles by cost**: Fable only does the "expensive reasoning" work (DAG analysis, verdicts on big decisions) — each call short and targeted. Opus does all the code typing (~90% of the session's tokens). Don't use Fable to implement; don't use Opus to judge hard architectural decisions.
+- **Orchestrator stays lean**: main = conductor — keep the **dependency map + conformance report in a FILE**, not in chat memory. Each phase's guts live in sub-agents; main doesn't swallow code.
+- **Parallel only when disjoint + no-dep + contract-first**: two phases run in parallel ⟺ `Owns files` are disjoint AND no dependency (per the DAG Fable approved), AND the shared seam is locked in Phase 0.
+- **5-part brief + concise report**: each `ff-opus-implementer` sub-agent receives a 5-part brief (objective/files/interfaces/constraints/verification — the implementer doesn't see the conversation, the brief must stand on its own), edits **ONLY the files it owns**, returns a concise `PHASE REPORT` with verification evidence, **NO code dumps**.
+- **Advisor behind a gate (consult gate)**: Opus ONLY asks the Fable advisor when a decision (a) cannot be derived from the plan/existing conventions AND (b) affects many files or is hard to reverse — OR (c) **the same problem has been tried twice and failed** (hard threshold: 2nd failure → mandatory consult, no blind grinding onward). Small decisions → Opus decides itself + records in the deviation report. The advisor is a **read-only skeptic** — use the `ff-fable-advisor` agent (only has Read/Grep/Glob tools; even if it wanted to edit files it has no tool for it): advises only, never edits files.
+- **Reports are claims, not evidence**: main does not trust a sub-agent's "done" report — it must read the phase's git diff itself + run the verification command itself before marking the phase done in the conformance file. A report missing real command output = not done; a phase reporting a gap → resend a fixed brief, don't interpret on its behalf.
+- **Advisor answers concisely**: verdict + short reasoning, soft limit **~300 tokens** — "emit judgment not volume". Don't truncate if the problem genuinely needs more, but concise is the default.
+- **Review = 1 join on main, no fan out**: `/codex-impl-review` reads the **git diff**, not the chat. Claude writes code; Codex only reviews; Claude applies fixes after evaluating each issue.
+- **Need to edit code → must exit plan mode** (this skill modifies files). `/codex-impl-review` requires exiting plan mode first.
+- **Adversarial review to the end**: only stop at `verdict === APPROVE` or stalemate. No fake APPROVEs.
+- **Preserve functional intent**: fixes from review don't change behavior unless the issue demands a behavior change.
 
 ## Workflow
 
-### Bước 1 — Đọc plan + xác nhận scope + chọn chế độ
+### Step 1 — Read the plan + confirm scope + Fable analyzes the DAG
 
-- Tìm plan: user chỉ đường dẫn → dùng; nếu không → `docs/features/<feature>/implementation_plan.md` (output của `ff-planning`). Nhiều/không có → hỏi.
-- Đọc plan: nắm Mục tiêu/Outcomes, các bước, **dependency contract** (`Owns files`/`Depends on`/song song?), vùng tác động (file:line), test & verify, ngoài phạm vi.
-- Nếu plan chưa qua review (`ff-planning`/`codex-plan-review`) → báo user, gợi ý review plan trước; vẫn cho phép tiếp nếu user muốn.
-- **Chọn chế độ implement (adaptive-by-size)**:
-  - **Inline (2a)** — mặc định — khi plan nhỏ: ít bước, ít file, một mạch code làm được mà không phình context main.
-  - **Orchestrated (2b)** khi plan **lớn/vượt ngưỡng**: nhiều phase với `Owns files` disjoint, hoặc dự kiến context main sẽ phình quá mức làm tụt chất lượng code (ngưỡng heuristic ~150k tokens — **tunable**, chỉ là mốc, không phải luật cứng). Nghi ngờ / phase ít nhưng dài → vẫn có thể orchestrate để giữ main gọn.
-- Chốt scope review sau này: **working-tree** (thay đổi chưa commit, mặc định) hay **branch** (diff vs base). Repo đang sạch → sẽ tạo thay đổi ở Bước 2.
+- Find the plan: user gives a path → use it; otherwise → `docs/features/<feature>/implementation_plan.md` (output of `ff-planning`). Multiple/none → ask.
+- Read the plan: grasp the Goals/Outcomes, steps, **dependency contract** (`Owns files`/`Depends on`/parallel?), affected areas (file:line), test & verify, out of scope.
+- If the plan hasn't been reviewed (`ff-planning`/`codex-plan-review`) → tell the user, suggest reviewing the plan first; still allow proceeding if the user wants.
+- **Fable analyzes the DAG**: spawn an agent with `model: 'fable'`, input = dependency contract + phase list + relevant plan excerpts. Task: build the DAG (node = phase, edge = `Depends on`), decide **which batches run in parallel, which sequentially**, flag phases touching shared files that must be merged/serialized, and identify the **shared seam** to lock in Phase 0. Concise output (DAG + reasoning), implements NOTHING.
+- Write Fable's DAG + batch plan into the working file `docs/features/<feature>/impl_progress.md` — this file is also the **conformance report** (per phase: status / file:line touched / deviations / advisor consults) updated incrementally.
+- Lock the later review scope: **working-tree** (uncommitted changes, default) or **branch** (diff vs base). Repo is clean → changes will be created in Step 2.
 
-### Bước 2a — Implement inline (plan nhỏ)
+### Step 2 — Phase 0 contract-first + fan out Opus sub-agents per the DAG
 
-- Thoát plan mode (skill này sửa file).
-- Theo thứ tự bước trong plan, tôn trọng `Depends on`. Bước song song được → có thể gộp, nhưng giữ thay đổi mạch lạc.
-- Mỗi bước: sửa đúng file plan chỉ ra; theo convention/pattern sẵn có trong code (đọc quanh trước khi viết).
-- Lệch plan khi cần (plan sai/thiếu) → ghi lại lý do, cập nhật plan tương ứng để plan vẫn là nguồn sự thật.
-- Viết/cập nhật test theo mục "Test & verify" của plan khi áp dụng.
+Main = **conductor**, phase guts live in sub-agents. Exit plan mode first (this skill modifies files). Sequence:
 
-→ sang Bước 3.
+1. **Phase 0 — contract-first (on main)**: lock the **shared seam** (data types, function signatures, interfaces, stubs) that Fable identified, FIRST on main. Subsequent parallel phases only fill in this fixed contract → no stepping on the shared seam.
+2. **Fan out Opus sub-agents per Fable's DAG**: parallel batch → multiple `subagent_type: 'ff-opus-implementer'` sub-agents in 1 message; sequential batch → run along dependency edges. Each sub-agent receives a **self-sufficient 5-part brief** (the implementer doesn't see the conversation — the brief must stand on its own):
+   1. **Objective** — phase goal + related Outcomes + that phase's plan excerpt.
+   2. **Files** — `Owns files` (may only edit these files).
+   3. **Interfaces** — the contract from Phase 0 (types, signatures, API shape to match).
+   4. **Constraints** — conventions to follow, no-go zones.
+   5. **Verification** — command proving the phase works; require running it and putting real output in the report.
 
-### Bước 2b — Orchestrate (plan lớn)
+   The agent knows the advisor consult protocol + the `PHASE REPORT` format itself (defined in `agents/ff-opus-implementer.md`): each plan item → status → file:line, with `VERIFIED`/`CONSULTS`/`DEVIATIONS`/`GAPS`, **NO code dumps** (the diff lives in git). If two phases must touch a shared file → **not** parallel; serialize or merge into one sub-agent (Fable should have caught this in Step 1; a sub-agent discovering more → stop, report to main).
+3. **Fable advisor consult protocol** (applies to each Opus sub-agent):
+   - **When (consult gate)**: ONLY when a technical decision (a) cannot be derived from the plan/existing conventions AND (b) affects many files or is hard to reverse — e.g. choosing between two data-structure approaches affecting the API, plan ambiguity at an architectural fork; OR (c) **the same problem has been tried twice and failed** → mandatory consult before attempt 3. Small decisions → decide + record a `deviation`.
+   - **How to ask**: spawn a NEW `subagent_type: 'ff-fable-advisor'` agent for EACH question (the advisor reads code fresh, carrying no accumulated assumptions; this agent only has Read/Grep/Glob tools — read-only by permission, not by instruction). The brief sent to the advisor must be **self-sufficient but distilled**: the specific question + the options under consideration with trade-offs + the relevant plan excerpt + **file:line pointers** so the advisor reads the real code itself (don't paste whole files).
+   - **Answer constraints**: the advisor is a read-only skeptic — returns a **verdict + the deciding risk + short reasoning, soft limit ~300 tokens**; no file edits, no writing code on someone's behalf, advice only. Opus makes the final call and owns it, recording the verdict in its report.
+4. **Main collects reports + self-verifies** into the conformance file (`impl_progress.md`) after each batch — including advisor consults; no swallowing sub-agent code into context. **Reports are claims, not evidence**: before marking a phase = done, main reads the `git diff` of the phase's `Owns files` + runs the phase's verification command (if the plan has one). A "done" report without real command output, or a diff that doesn't match the report → phase not done: resend a fixed brief to the sub-agent, don't interpret on its behalf.
 
-Main = **nhạc trưởng**, ruột phase ở sub-agent. Trình tự:
+→ proceed to Step 3.
 
-1. **Dựng dependency map ra FILE**: từ dependency contract của plan, dựng DAG các phase (node = phase, cạnh = `Depends on`) ghi vào file làm việc (vd `docs/features/<feature>/impl_progress.md`) — KHÔNG giữ trong chat memory. File này cũng là **conformance report** (mỗi phase: status / file:line đụng / deviation) cập nhật dần.
-2. **Phase 0 — contract-first (trên main)**: khóa **seam chung** (kiểu dữ liệu, chữ ký hàm, interface, stub) TRƯỚC trên main. Các phase song song sau chỉ điền vào contract cố định này → không giẫm lên seam chung.
-3. **Tỏa sub-agent theo DAG**: các phase có `Owns files` disjoint + không phụ thuộc + Phase 0 đã xong → chạy **song song** (nhiều sub-agent trong 1 message); phần còn lại tuần tự theo cạnh phụ thuộc. Mỗi sub-agent nhận **brief tự đủ**:
-   - Mục tiêu phase + các Outcome liên quan + trích đoạn plan của phase đó.
-   - **Owns files** (chỉ được sửa các file này), convention cần theo, contract từ Phase 0.
-   - Yêu cầu trả **report gọn**: mỗi plan item → `status` (done/partial/blocked) → `file:line` đã đụng → `deviation` (nếu lệch plan, kèm lý do). **KHÔNG dump code** (diff nằm ở git).
-   - Nếu hai phase buộc phải đụng file chung → **không** song song; nối tuần tự hoặc gộp vào một sub-agent.
-4. **Main gom report** vào conformance file sau mỗi lượt; không nuốt code của sub-agent vào context.
+### Step 3 — Integration join + self-check vs plan (on main)
 
-→ sang Bước 3.
+- **Integration join**: after collecting all phases → run the **full build/lint/test suite on main** (not in a sub-agent). Clear integration errors → fix on main first, don't push garbage into review.
+- **Self-check vs plan**: re-check every Outcome in the plan — achieved yet? Steps not done → finish them or record the deferral reason in the conformance file.
+- Confirm there are changes to review: working-tree must have staged/unstaged (`git status --short`), or the branch must differ from base. No changes → don't call review.
 
-### Bước 3 — Integration join + self-check vs plan (trên main)
+### Step 4 — Code review: invoke /codex-impl-review
 
-- **Integration join**: sau khi gom hết phase → chạy **full build/lint/test suite trên main** (không phải trong sub-agent). Lỗi tích hợp rõ ràng → sửa trên main trước, đừng đẩy rác sang review.
-- **Self-check vs plan**: đối chiếu lại từng Outcome trong plan — đã đạt chưa? Bước nào chưa làm → làm nốt hoặc ghi rõ lý do hoãn vào conformance file.
-- Xác nhận có thay đổi để review: working-tree phải có staged/unstaged (`git status --short`), hoặc branch phải khác base. Không có thay đổi → không gọi review.
+Delegate the adversarial review to `/codex-impl-review` — **a single join on main, no fan out**; the engine reads the **git diff** (not the chat, not sub-agent reports), handles init→start→poll→verdict→apply fix/rebut→resume until APPROVE or stalemate, auto-detects scope + effort by file count.
 
-### Bước 4 — Review code: invoke /codex-impl-review
+Invoke Skill `codex-impl-review`, passing:
+- **USER_REQUEST** = the feature goal + "this code implements the plan at `<plan path>`".
+- **SESSION_CONTEXT** = **plan conformance is an explicit review criterion** — list the Outcomes + plan steps so Codex checks the code follows them, plus conventions/constraints. If there are intentional deviations from the plan (recorded in the conformance file, including deviations per the Fable advisor's verdict) → state the reason clearly so Codex doesn't misflag them. Don't paste sub-agent reports — only point at the plan + let the engine read the diff.
+- Scope (working-tree/branch) + base branch if branch.
+- Effort: let the engine infer from file count (`<10`=medium, `10-50`=high, `>50`=xhigh) unless the user overrides.
 
-Giao phần review adversarial cho `/codex-impl-review` — **một join duy nhất trên main, không fan out**; engine đọc **git diff** (không đọc chat, không đọc report sub-agent), lo init→start→poll→verdict→apply fix/rebut→resume tới APPROVE hoặc stalemate, auto-detect scope + effort theo số file.
+For each issue Codex raises: valid → Claude **fixes the code**, verifies, then resumes; invalid → rebut with concrete evidence. Loop until `verdict === APPROVE` or stalemate. Codex does NOT edit files. Always finalize+stop.
 
-Invoke Skill `codex-impl-review`, truyền:
-- **USER_REQUEST** = mục tiêu feature + "code này hiện thực plan tại `<đường dẫn plan>`".
-- **SESSION_CONTEXT** = **độ khớp với plan là tiêu chí review tường minh** — liệt kê Outcomes + các bước plan để Codex kiểm code có bám không, kèm convention/ràng buộc. Nếu có lệch plan có chủ đích (ghi ở conformance file) → nêu rõ lý do để Codex không báo nhầm. Không dán report sub-agent — chỉ trỏ plan + để engine đọc diff.
-- Scope (working-tree/branch) + base branch nếu là branch.
-- Effort: để engine tự suy theo số file (`<10`=medium, `10-50`=high, `>50`=xhigh) trừ khi user override.
+Especially scrutinize: **places where the code doesn't match the plan** (missing steps, going a different direction than agreed) — that's the main reason to run this skill, beyond ordinary bugs/quality.
 
-Mỗi issue Codex nêu: hợp lệ → Claude **sửa code** rồi verify rồi resume; không hợp lệ → rebut kèm bằng chứng cụ thể. Lặp tới `verdict === APPROVE` hoặc stalemate. Codex KHÔNG sửa file. Luôn finalize+stop.
+### Step 5 — Wrap up + handoff
 
-Đặc biệt soi: **chỗ code không khớp plan** (thiếu bước, làm khác hướng đã chốt) — đây là lý do chính chạy skill này, ngoài bug/chất lượng thông thường.
+- **APPROVE** → report: files touched, review round count, issues found/fixed/rebutted, defects fixed by severity, remaining risks, final plan conformance (cross-checked against the conformance file), and a summary of Fable advisor consults (what decision, what verdict).
+- **Stalemate** → list the deadlocked points (`Point | Claude | Codex`), recommendation, ask the user to decide.
+- Final cross-check: every Outcome in the plan ✅ or what's still owed.
+- Suggest the bundle's next step: `ff-impl-status` (update progress), `ff-api-contract-writer` (API docs), `ff-test-case-writer`/`ff-service-test-runner` (test plan + run), `ff-feature-brief` (PO/QC handoff). Commit/PR only when the user asks.
 
-### Bước 5 — Hoàn tất + bàn giao
+## Context hygiene (controlled compact)
 
-- **APPROVE** → báo: file đã đụng, số vòng review, issue tìm/sửa/bác, defect đã fix theo mức nghiêm trọng, rủi ro còn lại, độ khớp plan cuối cùng (đối chiếu conformance file).
-- **Stalemate** → liệt kê điểm bế tắc (`Điểm | Claude | Codex`), khuyến nghị, hỏi user chốt.
-- Đối chiếu lần cuối: mọi Outcome trong plan ✅ hay còn nợ gì.
-- Gợi ý bước kế của bundle: `ff-impl-status` (cập nhật tiến độ), `ff-api-contract-writer` (API docs), `ff-test-case-writer`/`ff-service-test-runner` (test plan + chạy), `ff-feature-brief` (bàn giao PO/QC). Commit/PR chỉ khi user yêu cầu.
-
-## Vệ sinh context (compact có kiểm soát)
-
-Đừng `/compact` trần — nhất là sau khi orchestrate (context dễ phình vì nhiều lượt gom). Sau khi review xong, đề xuất block compact điền path thật, rõ GIỮ/BỎ:
+Don't run a bare `/compact` — context balloons easily from the many collection turns after fanout. After review is done, propose a compact block with real paths filled in, explicit KEEP/DROP:
 
 ```
-/compact GIỮ: conformance report docs/features/<feature>/impl_progress.md (status từng Outcome + deviation),
-plan docs/features/<feature>/implementation_plan.md, kết quả review (verdict, issue đã fix, rủi ro còn lại).
-BỎ: edit history từng bước, report chi tiết của sub-agent, transcript debate của /codex-impl-review
-(đã tổng hợp vào conformance report; diff đầy đủ ở git).
+/compact KEEP: conformance report docs/features/<feature>/impl_progress.md (Fable's DAG, per-Outcome status,
+deviations, advisor consults), plan docs/features/<feature>/implementation_plan.md,
+review results (verdict, issues fixed, remaining risks).
+DROP: step-by-step edit history, detailed sub-agent reports, /codex-impl-review debate transcript
+(already synthesized into the conformance report; full diff is in git).
 ```
 
-Cái gì chưa vào conformance file/plan → gắn cờ must-keep trước khi compact.
+Anything not yet in the conformance file/plan → flag as must-keep before compacting.
 
 ## Anti-patterns
 
-- ❌ Implement không đọc plan, hoặc trôi khỏi plan mà không ghi lý do/không cập nhật plan.
-- ❌ Orchestrate cho plan nhỏ (over-engineer) — inline là đủ.
-- ❌ Cho sub-agent chạy song song khi `Owns files` chồng nhau hoặc chưa khóa Phase 0 → giẫm chân, xung đột file.
-- ❌ Giữ dependency map/conformance trong chat memory thay vì FILE → main phình, mất dấu khi context bị cắt.
-- ❌ Sub-agent dump code về main thay vì report gọn → phá mục tiêu giữ main lean.
-- ❌ Fan out cho pha review, hoặc để `/codex-impl-review` đọc chat/report thay vì git diff.
-- ❌ Gọi `/codex-impl-review` khi chưa có thay đổi (repo sạch) → engine pre-flight fail.
-- ❌ Đẩy code lỗi build/test sang review thay vì integration join sửa sanity trước.
-- ❌ Bỏ tiêu chí "khớp plan" trong SESSION_CONTEXT → review thành review code chung chung, mất mục đích.
-- ❌ Để Codex sửa file (Codex chỉ review; Claude áp fix).
-- ❌ Nhận APPROVE giả khi engine chưa ra `verdict: APPROVE`.
-- ❌ Tự commit/PR khi user chưa yêu cầu.
-- ❌ `/compact` trần làm mất conformance report chưa kịp ghi ra đĩa.
+- ❌ Implementing without reading the plan, or drifting from the plan without recording a reason/updating the plan.
+- ❌ Using Fable to implement (type code) — Fable only analyzes the DAG and advises; Opus is the implementer.
+- ❌ Opus asking the advisor about small decisions derivable from the plan/conventions → burns input tokens for nothing; the consult gate exists to block exactly this.
+- ❌ Sending the advisor a pile of pasted files instead of a distilled brief + file:line pointers — the cost is in the INPUT, not the 300-token output.
+- ❌ Treating 300 tokens as an absolute hard cap — truncating an architectural verdict mid-way is worse than spending a few hundred more tokens. Soft limit: concise by default, allowed to exceed when genuinely needed.
+- ❌ Letting the Fable advisor edit files or write code on someone's behalf — the advisor is read-only (the `ff-fable-advisor` agent only has Read/Grep/Glob); Opus decides and owns it.
+- ❌ Blindly grinding a 3rd time on the same problem that failed twice instead of consulting the advisor — the 2-fail threshold is hard.
+- ❌ Marking a phase = done based only on the sub-agent's report, without reading the diff/running verify — reports are claims, not evidence.
+- ❌ Running sub-agents in parallel when `Owns files` overlap or Phase 0 isn't locked → stepping on each other, file conflicts.
+- ❌ Keeping the dependency map/conformance in chat memory instead of a FILE → main balloons, loses track when context gets cut.
+- ❌ Sub-agents dumping code back to main instead of a concise report → defeats the goal of keeping main lean.
+- ❌ Fanning out for the review phase, or letting `/codex-impl-review` read chat/reports instead of the git diff.
+- ❌ Calling `/codex-impl-review` when there are no changes yet (clean repo) → engine pre-flight fails.
+- ❌ Pushing code that fails build/test into review instead of fixing sanity at the integration join first.
+- ❌ Dropping the "plan conformance" criterion from SESSION_CONTEXT → the review becomes a generic code review, losing its purpose.
+- ❌ Letting Codex edit files (Codex only reviews; Claude applies fixes).
+- ❌ Accepting a fake APPROVE when the engine hasn't emitted `verdict: APPROVE`.
+- ❌ Committing/PR-ing on your own when the user hasn't asked.
+- ❌ A bare `/compact` losing a conformance report not yet written to disk.

@@ -111,7 +111,7 @@ This analysis must be **complete and final** before entering the debate. It is C
    Bring the **independent analysis from Step 2** as Claude's opening position — don't discard it and rethink from scratch.
 3. **Merge `assessment.md`**: write `docs/features/<feature>/assessment.md` (or where the user specifies) per `references/assessment-template.md`. During the debate, classify each point: **True consensus / True disagreement / Claude-only insight / Codex-only insight / Same direction, different depth**. Also record the **blindspots** closed / still open after the debate + confidence in the "Blindspots / open unknowns" section.
 
-Respect all codex-think-about rules (information barrier, no round cap, exit only on consensus or stalemate, File Modification Guard, always finalize+stop). If `/codex-think-about` is unavailable → tell the user to install it; do NOT invent your own codex protocol.
+Respect all codex-think-about rules (information barrier, exit only on consensus or stalemate, File Modification Guard, always finalize+stop) — **but cap each debate at 5 rounds per stage** (this skill can run the engine twice: Stage 1 + Stage 2): past round 5 without consensus, force-exit as a stalemate and record the remaining disagreements in the `Point | Claude | Codex` table — an honest capped stalemate beats an unbounded loop re-feeding the whole transcript every round. If `/codex-think-about` is unavailable → tell the user to install it; do NOT invent your own codex protocol.
 
 ### Branch — stop or continue?
 

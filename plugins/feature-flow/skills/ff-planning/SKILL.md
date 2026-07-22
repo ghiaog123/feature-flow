@@ -77,7 +77,7 @@ Invoke Skill `codex-think-about`, passing:
 - **CONSTRAINTS** = what must not be violated (including: no changing the scope of the settled solution).
 - **EFFORT** = the locked level.
 
-Bring the **preliminary approach from Step 1** as Claude's opening position. Debate to converge on: approach architecture, step ordering, integration points, test/rollback strategy, trade-offs, and **file-ownership boundaries between steps** (feeding the dependency contract in Step 3). Respect all codex-think-about rules (information wall, no round cap, File Modification Guard, always finalize+stop). If the skill is unavailable → tell the user to install codex; do NOT improvise a protocol.
+Bring the **preliminary approach from Step 1** as Claude's opening position. Debate to converge on: approach architecture, step ordering, integration points, test/rollback strategy, trade-offs, and **file-ownership boundaries between steps** (feeding the dependency contract in Step 3). Respect all codex-think-about rules (information wall, File Modification Guard, always finalize+stop) — **but cap the debate at 5 rounds**: past round 5 without consensus, force-exit as a stalemate and report the deadlocked points (an uncapped debate re-feeds the accumulated transcript every round — cost grows quadratically in rounds). If the skill is unavailable → tell the user to install codex; do NOT improvise a protocol.
 
 ### Step 3 — Write the implementation plan to a .md file (with dependency contract)
 
@@ -111,7 +111,7 @@ Invoke Skill `codex-plan-review`, passing:
 - **ACCEPTANCE_CRITERIA** = taken from the Goals/Outcomes section.
 - **EFFORT** = the locked level.
 
-Every valid issue Codex raises → Claude **fixes directly in the plan file** then resumes; invalid issues → rebut with reasons. Loop until `verdict === APPROVE` or stalemate. Always finalize+stop. If review proposes **changing the core solution** (not the implementation approach) → that's a signal to go back to `ff-problem-solver`, not something to decide inside plan review.
+Every valid issue Codex raises → Claude **fixes directly in the plan file** then resumes; invalid issues → rebut with reasons. Loop until `verdict === APPROVE` or stalemate, **hard cap 5 rounds** — past the cap, treat as stalemate: list the open points and hand the decision to the user instead of burning more rounds. Always finalize+stop. If review proposes **changing the core solution** (not the implementation approach) → that's a signal to go back to `ff-problem-solver`, not something to decide inside plan review.
 
 ### Step 5 — Wrap up + handoff
 

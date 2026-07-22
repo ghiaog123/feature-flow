@@ -24,7 +24,7 @@ Before teaching anything, establish the **subject** (what the human must underst
   "
   ```
 
-If it's ambiguous, ask one short question to pin it down. Then **read enough to teach it accurately yourself** — you cannot verify understanding of something you only half-understand. Read the diff, the surrounding code, the tests. Find the edge cases and the rejected alternatives, because those are exactly what you'll probe later.
+If it's ambiguous, ask one short question to pin it down. Then **read enough to teach it accurately yourself** — you cannot verify understanding of something you only half-understand. Read the diff, the surrounding code, the tests. Find the edge cases and the rejected alternatives, because those are exactly what you'll probe later. **Read it once, distill it into the checklist (Step 1), then let it go** — this is a long multi-turn session and everything you keep in context is re-billed on every later turn. Capture what you'll need to probe (specific `file:line` anchors per checklist item, the edge cases, the rejected alternatives) as concrete sub-items in the checklist doc, so you never need the full diff resident again.
 
 ## Step 1 — Build the understanding checklist
 
@@ -51,7 +51,9 @@ Organize every item under three buckets — and within each, force yourself to w
 - [ ] What these changes will impact downstream
 ```
 
-Fill in real, specific sub-items from what you read — not these generic placeholders. Update checkboxes live as the human proves each one, so progress is visible. Understanding the **problem** well is the foundation; if they don't get *why the problem existed*, the solution will never make sense, so don't rush bucket 1.
+Fill in real, specific sub-items from what you read — not these generic placeholders, and **anchor each item with the `file:line` spans that back it**. Update checkboxes live as the human proves each one, so progress is visible.
+
+**The checklist doc is the session's state — not your context.** After Step 1, teach from the checklist; when drilling a specific item, re-read only that item's anchored `file:line` span, never the whole diff or file again. If context gets compacted mid-session, the checklist + anchors are enough to resume. Understanding the **problem** well is the foundation; if they don't get *why the problem existed*, the solution will never make sense, so don't rush bucket 1.
 
 ## Step 2 — Find out where they already are
 
